@@ -1,6 +1,7 @@
 /* rahimov.tr — ortak betik: tema, menü ve canlı veri araçları */
 (function () {
   'use strict';
+  window.__rtr = 1;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
