@@ -27,6 +27,15 @@
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function timed(url) {
+    return new Promise(function (resolve, reject) {
+      var done = false, ctl = window.AbortController ? new AbortController() : null;
+      var tm = setTimeout(function () { if (!done) { done = true; if (ctl) ctl.abort(); reject(new Error('Zaman aşımı (15 sn)')); } }, 15000);
+      fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) { if (!done) { done = true; clearTimeout(tm); resolve(r); } },
+        function (e) { if (!done) { done = true; clearTimeout(tm); reject(e); } });
+    });
+  }
+  var lastErr = '';
   function getJSON(url, ttl) {
     var key = 'c:' + url, now = Date.now();
     if (ttl) {
@@ -35,17 +44,20 @@
         if (hit && now - hit.t < ttl * 1000) return Promise.resolve(hit.d);
       } catch (e) {}
     }
-    return fetch(url).then(function (r) {
+    return timed(url).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }).then(function (d) {
       try { sessionStorage.setItem(key, JSON.stringify({ t: now, d: d })); } catch (e) {}
       return d;
+    }, function (e) {
+      lastErr = (url.split('/')[2] || '') + ' → ' + (e && e.message ? e.message : e);
+      throw e;
     });
   }
   function fail(el, retry) {
     if (!el) return;
-    el.innerHTML = '<div class="error-box">Veri şu an alınamadı. Bağlantını kontrol edip biraz sonra tekrar dene. <button class="btn btn-secondary btn-sm" type="button" style="margin-left:8px">Tekrar dene</button></div>';
+    el.innerHTML = '<div class="error-box">Veri şu an alınamadı. Bağlantını kontrol edip biraz sonra tekrar dene.' + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">Ayrıntı: ' + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-left:8px">Tekrar dene</button></div>';
     var b = $('button', el); if (b && retry) b.addEventListener('click', retry);
   }
   function chg(v) {

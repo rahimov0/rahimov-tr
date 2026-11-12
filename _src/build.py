@@ -66,7 +66,13 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <meta property="og:description" content="{desc}">
 <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0C0C0B" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="{FAVICON}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="/icons/icon-192.png" sizes="192x192">
+<link rel="icon" href="{FAVICON}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Rahimov">
+<meta name="mobile-web-app-capable" content="yes">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6811894230993861" crossorigin="anonymous"></script>
 <script>(function(){{try{{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}}catch(e){{}}}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -741,3 +747,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+import json as _json
+open("manifest.webmanifest","w",encoding="utf-8").write(_json.dumps({
+  "name":"Rahimov — Günlük araçlar ve oyunlar","short_name":"Rahimov","lang":"tr",
+  "start_url":"/","scope":"/","display":"standalone",
+  "background_color":"#FAFAF7","theme_color":"#1A1917",
+  "icons":[
+    {"src":"/icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]},
+  ensure_ascii=False,indent=2))
