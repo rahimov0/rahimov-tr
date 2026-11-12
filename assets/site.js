@@ -32,7 +32,7 @@
     return new Promise(function (resolve, reject) {
       var done = false, ctl = window.AbortController ? new AbortController() : null;
       var tm = setTimeout(function () { if (!done) { done = true; if (ctl) ctl.abort(); reject(new Error('Zaman aşımı (15 sn)')); } }, 15000);
-      fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) { if (!done) { done = true; clearTimeout(tm); resolve(r); } },
+      fetch(url, ctl ? { cache: 'no-cache', signal: ctl.signal } : { cache: 'no-cache' }).then(function (r) { if (!done) { done = true; clearTimeout(tm); resolve(r); } },
         function (e) { if (!done) { done = true; clearTimeout(tm); reject(e); } });
     });
   }
@@ -45,9 +45,16 @@
         if (hit && now - hit.t < ttl * 1000) return Promise.resolve(hit.d);
       } catch (e) {}
     }
-    return timed(url).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+    /* Truncgil dosyası 10 yıl önbellek süresiyle geliyor; dakikalık parametre eski kopyayı aşar */
+    var real = url.indexOf('truncgil.com') > -1 ? url + '?_=' + Math.floor(now / 60000) : url;
+    function once() {
+      return timed(real).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+    }
+    return once().catch(function () {
+      return new Promise(function (res) { setTimeout(res, 1500); }).then(once);   /* geçici/yarım yanıt için bir kez daha dene */
     }).then(function (d) {
       try { sessionStorage.setItem(key, JSON.stringify({ t: now, d: d })); } catch (e) {}
       return d;
@@ -67,6 +74,7 @@
     return '<span class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + '%' + nf(Math.abs(v)) + '</span>';
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function stamp(src) { var n = new Date(); return 'Kaynak verisi: ' + (src || '—') + ' · Son kontrol: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
   function setText(sel, t) { var e = $(sel); if (e) { e.textContent = t; e.classList.remove('skeleton'); } }
   function setHTML(sel, t) { var e = $(sel); if (e) { e.innerHTML = t; e.classList.remove('skeleton'); } }
 
@@ -226,7 +234,7 @@
           rows += '<tr><td><b>' + c[0] + '</b><span class="sub">' + c[1] + '</span></td><td>' + nf(x.Buying, 4) + '</td><td>' + nf(x.Selling, 4) + '</td><td>' + chg(x.Change) + '</td></tr>';
         });
         body.innerHTML = rows;
-        setText('#fx-updated', 'Son güncelleme: ' + (j.Update_Date || '—'));
+        setText('#fx-updated', stamp(j.Update_Date));
         if (!from.options.length) {
           var opts = [['TRY', 'Türk Lirası']].concat(CUR.filter(function (c) { return rates[c[0]]; })).map(function (c) { return '<option value="' + c[0] + '">' + c[0] + ' — ' + c[1] + '</option>'; }).join('');
           from.innerHTML = opts; to.innerHTML = opts; from.value = 'USD'; to.value = 'TRY';
@@ -293,7 +301,7 @@
           rows += '<tr><td><b>' + g[1] + '</b></td><td>' + nf(x.Buying) + ' ' + g[2] + '</td><td>' + nf(x.Selling) + ' ' + g[2] + '</td><td>' + chg(x.Change) + '</td></tr>';
         });
         body.innerHTML = rows;
-        setText('#gold-updated', 'Son güncelleme: ' + (j.Update_Date || '—'));
+        setText('#gold-updated', stamp(j.Update_Date));
         if (!type.options.length) {
           type.innerHTML = GOLD.filter(function (g) { return data[g[0]] && g[2] === '₺'; }).map(function (g) { return '<option value="' + g[0] + '">' + g[1] + '</option>'; }).join('');
         }
