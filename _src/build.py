@@ -110,6 +110,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
         <li><a href="/hakkinda/">Hakkında</a></li>
         <li><a href="/iletisim/">İletişim</a></li>
         <li><a href="/gizlilik/">Gizlilik Politikası</a></li>
+        <li><a href="mailto:destek.rahimov@gmail.com">E-posta</a></li>
         <li><a href="https://github.com/rahimov0" target="_blank" rel="noopener">GitHub</a></li></ul></div>
     </div>
     <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Buradaki fiyat, hava, deprem ve vakit bilgileri üçüncü taraf kaynaklardan alınır, bilgilendirme amaçlıdır ve gecikmeli olabilir. Yatırım tavsiyesi değildir.</p>
@@ -644,6 +645,8 @@ PAGES["/iletisim/"] = dict(page="iletisim", title="İletişim — Rahimov",
     crumbs=[(None, "İletişim")],
     body=page_head("İletişim", "Bir hata mı buldun, bir önerin mi var? Aşağıdaki yollardan ulaşabilirsin.") + """
 <section class="section"><div class="wrap"><div class="prose">
+  <h2>E-posta</h2>
+  <p>Hata bildirimi, öneri, iş birliği ve gizlilik talepleri için: <a href="mailto:destek.rahimov@gmail.com">destek.rahimov@gmail.com</a></p>
   <h2>GitHub</h2>
   <p>Projelerin çoğunun kaynak kodu GitHub'da. Hata bildirimi ve öneriler için ilgili projenin sayfasında yeni bir kayıt (issue) açabilirsin: <a href="https://github.com/rahimov0" target="_blank" rel="noopener">github.com/rahimov0</a></p>
   <ul>
@@ -703,7 +706,7 @@ PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahi
   </ul>
   <p>Google'ın verileri nasıl kullandığı hakkında daha fazla bilgi için: <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google iş ortaklarının sitelerini veya uygulamalarını kullandığınızda Google'ın verileri nasıl kullandığı</a>.</p>
   <h2>Çocukların gizliliği</h2>
-  <p>Bu site, bilerek 13 yaşından küçük çocuklardan kişisel bilgi toplamaz. Böyle bir bilginin toplandığını düşünüyorsan <a href="/iletisim/">İletişim</a> sayfasından ulaş, bilgiyi silelim.</p>
+  <p>Bu site, bilerek 13 yaşından küçük çocuklardan kişisel bilgi toplamaz. Böyle bir bilginin toplandığını düşünüyorsan <a href="/iletisim/">İletişim</a> sayfasından ya da destek.rahimov@gmail.com adresinden ulaş, bilgiyi silelim.</p>
   <h2>Haklarınız</h2>
   <p>6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, hakkında tutulan verilere erişme, düzeltilmesini veya silinmesini isteme hakkın var. Hesabının ve ilgili verilerin silinmesini istersen iletişime geçmen yeterli.</p>
   <h2>Değişiklikler</h2>
