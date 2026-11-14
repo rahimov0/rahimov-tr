@@ -9,7 +9,7 @@
   var root = document.documentElement;
   var themeBtn = $('#themeBtn');
   if (themeBtn) themeBtn.addEventListener('click', function () {
-    var cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var cur = root.getAttribute('data-theme') || 'dark';
     var next = cur === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('theme', next); } catch (e) {}
@@ -176,18 +176,47 @@
   function ticker() {
     var el = $('#ticker'); if (!el) return;
     getJSON(API.fin, 240).then(function (j) {
-      var items = [['USD', 'Dolar', 4], ['EUR', 'Euro', 4], ['GBP', 'Sterlin', 4], ['GRA', 'Gram altın', 2], ['CEYREKALTIN', 'Çeyrek altın', 2], ['GUMUS', 'Gümüş', 2]];
-      el.innerHTML = items.filter(function (i) { return j[i[0]] && typeof j[i[0]].Selling === 'number'; }).map(function (i) {
+      var items = [['USD', 'Dolar', 4], ['EUR', 'Euro', 4], ['GBP', 'Sterlin', 4], ['CHF', 'Frank', 4], ['GRA', 'Gram altın', 2], ['CEYREKALTIN', 'Çeyrek altın', 2], ['YARIMALTIN', 'Yarım altın', 2], ['GUMUS', 'Gümüş', 2]];
+      var one = items.filter(function (i) { return j[i[0]] && typeof j[i[0]].Selling === 'number'; }).map(function (i) {
         var x = j[i[0]];
         return '<a class="tick num" href="' + (i[0].length === 3 && i[0] !== 'GRA' ? '/doviz/' : '/altin/') + '"><span>' + i[1] + '</span><b>' + nf(x.Selling, i[2]) + ' ₺</b>' + chg(x.Change) + '</a>';
       }).join('');
+      if (!one) { el.parentNode.hidden = true; return; }
+      var g = '<div class="mgroup">' + one + one + '</div>';
+      el.innerHTML = '<div class="marquee-track">' + g + g.replace('class="mgroup"', 'class="mgroup" aria-hidden="true"').replace(/href=/g, 'tabindex="-1" href=') + '</div>';
+      var w = $('.mgroup', el).offsetWidth || 2000;
+      el.style.setProperty('--dur', Math.max(30, Math.round(w / 55)) + 's');   /* ~55 px/sn */
     }).catch(function () { el.parentNode.hidden = true; });
   }
 
   /* ---------- Ana sayfa ---------- */
   function home() {
+    function panel(j) {
+      [['USD', 4], ['EUR', 4], ['GBP', 4], ['GRA', 2], ['CEYREKALTIN', 2], ['GUMUS', 2]].forEach(function (i) {
+        var x = j[i[0]]; if (!x || typeof x.Selling !== 'number') return;
+        setText('#c-' + i[0], nf(x.Selling, i[1]) + ' ₺');
+        setHTML('#c-' + i[0] + '-c', chg(x.Change));
+      });
+      var n = new Date(); setText('#c-time', pad(n.getHours()) + ':' + pad(n.getMinutes()));
+    }
+    function spark() {
+      var svg = $('#spark'); if (!svg) return;
+      var d = new Date(); d.setDate(d.getDate() - 34);
+      var start = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      getJSON(API.fxSeries('USD', start), 3600).then(function (j) {
+        var keys = Object.keys(j.rates || {}).sort(), v = keys.map(function (k) { return j.rates[k].TRY; }).filter(Boolean);
+        if (v.length < 2) return;
+        var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
+        var pts = v.map(function (y, i) { return [i / (v.length - 1) * 300, 58 - (y - mn) / sp * 52]; });
+        var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join('');
+        svg.innerHTML = '<path class="area" d="' + line + 'L300 64L0 64Z"/><path class="line" d="' + line + '"/>';
+        var ch = (v[v.length - 1] / v[0] - 1) * 100;
+        setHTML('#spark-range', nf(mn, 2) + ' – ' + nf(mx, 2) + ' · ' + (ch >= 0 ? '+' : '') + nf(ch, 1) + '%');
+      }).catch(function () {});
+    }
     function fin() {
       getJSON(API.fin, 110).then(function (j) {
+        panel(j);
         [['USD', '#t-usd', 4], ['EUR', '#t-eur', 4], ['GRA', '#t-gold', 2]].forEach(function (i) {
           var x = j[i[0]]; if (!x) return;
           setText(i[1], nf(x.Selling, i[2]) + ' ₺');
@@ -210,7 +239,7 @@
         el.innerHTML = quakeRows((j.result || []).slice(0, 5));
       }).catch(function () { fail(el.closest('.table-wrap'), quakes); });
     }
-    fin(); weather(); quakes();
+    fin(); weather(); quakes(); spark();
     setInterval(function () { fin(); quakes(); }, 120000);
   }
 

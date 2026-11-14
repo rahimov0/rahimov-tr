@@ -13,8 +13,7 @@
 <meta property="og:url" content="https://rahimov.tr/">
 <meta property="og:title" content="Rahimov — Döviz, altın, hava durumu, deprem ve tarayıcı oyunları">
 <meta property="og:description" content="Canlı döviz ve altın fiyatları, hava durumu, son depremler, namaz vakitleri gibi ücretsiz günlük araçlar ve tarayıcıda oynanan oyunlar tek adreste.">
-<meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0C0C0B" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#05070B">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/icons/icon-192.png" sizes="192x192">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%231A1917'/%3E%3Cpath d='M22 46V18h12a8 8 0 0 1 0 16H22m12 0 8 12' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='47' cy='18' r='4' fill='%23FB923C'/%3E%3C/svg%3E" type="image/svg+xml">
@@ -26,8 +25,8 @@
 <script>(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=2026-11-12">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=2026-11-14">
 </head>
 <body data-page="home">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -96,20 +95,36 @@
     <button class="icon-btn menu-btn" type="button" id="menuBtn" aria-label="Menü" aria-expanded="false" aria-controls="navLinks"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
   </div>
 </header>
-<div class="ticker"><div class="wrap" id="ticker" aria-label="Canlı piyasa özeti"></div></div>
+<div class="ticker"><div class="marquee" id="ticker" role="region" aria-label="Canlı piyasa özeti"></div></div>
 
 
 <main>
 
-<section class="hero"><div class="wrap">
-  <p class="eyebrow"><span class="dot"></span>Ücretsiz · kayıt gerekmez</p>
-  <h1>Günün verileri ve küçük, işe yarayan araçlar.</h1>
-  <p class="lead">Dolar kaç lira, yarın yağmur var mı, az önceki deprem neredeydi? Sık bakılan bilgiler tek sayfada. Yanında da tarayıcıda oynayabileceğin oyunlar var.</p>
-  <div class="hero-actions"><a href="/araclar/" class="btn btn-primary">Tüm araçlar</a><a href="/projeler/" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-game"/></svg>Oyunlar ve projeler</a></div>
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <p class="eyebrow"><span class="dot"></span>Canlı veri · ücretsiz · kayıt yok</p>
+    <h1>Günlük verin <span class="hl">tek ekranda.</span></h1>
+    <p class="lead">Dolar kaç lira, yarın yağmur var mı, az önceki deprem neredeydi? Döviz, altın, hava, deprem ve namaz vakitleri tek sayfada, telefonda da hızlı. Yanında tarayıcıda oynayabileceğin oyunlar var.</p>
+    <div class="hero-actions"><a href="/araclar/" class="btn btn-primary">Araçları aç <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a><a href="/projeler/" class="btn btn-secondary"><svg class="icon" aria-hidden="true"><use href="#i-game"/></svg>Oyunlar ve projeler</a></div>
+    <div class="stats"><div><b>7</b><span>canlı araç</span></div><div><b>9</b><span>proje</span></div><div><b>2 dk</b><span>yenileme</span></div><div><b>0</b><span>üyelik</span></div></div>
+  </div>
+  <aside class="console" aria-label="Canlı piyasa paneli">
+    <div class="console-head"><i>Canlı panel</i><span id="c-time">--:--</span></div>
+    <ul class="console-rows">
+      <li><a href="/doviz/"><span class="k">USD / TRY</span><span class="v num" id="c-USD"><span class="skeleton">00,0000</span></span><span class="c num" id="c-USD-c">&nbsp;</span></a></li>
+      <li><a href="/doviz/"><span class="k">EUR / TRY</span><span class="v num" id="c-EUR"><span class="skeleton">00,0000</span></span><span class="c num" id="c-EUR-c">&nbsp;</span></a></li>
+      <li><a href="/doviz/"><span class="k">GBP / TRY</span><span class="v num" id="c-GBP"><span class="skeleton">00,0000</span></span><span class="c num" id="c-GBP-c">&nbsp;</span></a></li>
+      <li><a href="/altin/"><span class="k">Gram altın</span><span class="v num" id="c-GRA"><span class="skeleton">00,0000</span></span><span class="c num" id="c-GRA-c">&nbsp;</span></a></li>
+      <li><a href="/altin/"><span class="k">Çeyrek altın</span><span class="v num" id="c-CEYREKALTIN"><span class="skeleton">00,0000</span></span><span class="c num" id="c-CEYREKALTIN-c">&nbsp;</span></a></li>
+      <li><a href="/altin/"><span class="k">Gümüş (gr)</span><span class="v num" id="c-GUMUS"><span class="skeleton">00,0000</span></span><span class="c num" id="c-GUMUS-c">&nbsp;</span></a></li>
+    </ul>
+    <div class="console-spark"><small><span>USD / TRY · 30 gün</span><span id="spark-range">&nbsp;</span></small>
+      <svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none" role="img" aria-label="Dolar kuru son 30 gün"></svg></div>
+  </aside>
 </div></section>
 
 <section class="section" aria-labelledby="ozet-title"><div class="wrap">
-  <div class="section-head"><div><h2 id="ozet-title">Şu an</h2><p>Fiyatlar birkaç dakikada bir yenilenir.</p></div></div>
+  <div class="section-head"><div><span class="kicker">01 — Özet</span><h2 id="ozet-title">Şu an</h2><p>Fiyatlar birkaç dakikada bir yenilenir.</p></div></div>
   <div class="grid g4 keep2">
     <a class="card tile" href="/doviz/"><span class="tile-label">Dolar (USD)</span><span class="tile-value" id="t-usd"><span class="skeleton">00,0000</span></span><span class="tile-sub num" id="t-usd-sub">&nbsp;</span></a>
     <a class="card tile" href="/doviz/"><span class="tile-label">Euro (EUR)</span><span class="tile-value" id="t-eur"><span class="skeleton">00,0000</span></span><span class="tile-sub num" id="t-eur-sub">&nbsp;</span></a>
@@ -119,17 +134,17 @@
 </div></section>
 
 <section class="section" id="araclar" aria-labelledby="araclar-title"><div class="wrap">
-  <div class="section-head"><div><h2 id="araclar-title">Araçlar</h2><p>Hepsi ücretsiz, üyelik istemez ve telefonda rahat kullanılır.</p></div></div>
+  <div class="section-head"><div><span class="kicker">02 — Araçlar</span><h2 id="araclar-title">Yedi araç, tek adres</h2><p>Hepsi ücretsiz, üyelik istemez ve telefonda rahat kullanılır.</p></div></div>
   <div class="grid g3"><a class="card tool" href="/doviz/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-fx"/></svg></span><div><h3>Döviz kurları</h3><p>Dolar, euro, sterlin ve 20 para biriminin alış–satış fiyatı, çevirici ve 60 günlük grafik.</p></div></a><a class="card tool" href="/altin/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-gold"/></svg></span><div><h3>Altın fiyatları</h3><p>Gram, çeyrek, yarım, tam ve Cumhuriyet altını fiyatları ile altın hesaplayıcı.</p></div></a><a class="card tool" href="/hava-durumu/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-wx"/></svg></span><div><h3>Hava durumu</h3><p>Şehrini ara; anlık sıcaklık, saatlik tahmin ve 7 günlük hava durumu.</p></div></a><a class="card tool" href="/deprem/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-quake"/></svg></span><div><h3>Son depremler</h3><p>Kandilli Rasathanesi verileriyle Türkiye ve çevresindeki son 100 deprem.</p></div></a><a class="card tool" href="/namaz-vakitleri/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-pray"/></svg></span><div><h3>Namaz vakitleri</h3><p>Bulunduğun şehir için günlük ve aylık vakitler, sıradaki vakte geri sayım.</p></div></a><a class="card tool" href="/kripto/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-coin"/></svg></span><div><h3>Kripto para fiyatları</h3><p>Bitcoin, Ethereum ve diğer büyük kripto paraların dolar ve TL fiyatı.</p></div></a><a class="card tool" href="/resmi-tatiller/"><span class="tool-ic"><svg class="icon" aria-hidden="true"><use href="#i-cal"/></svg></span><div><h3>Resmî tatiller</h3><p>Bu yılın ve gelecek yılın resmî tatil günleri, bir sonraki tatile kalan gün.</p></div></a></div>
 </div></section>
 
 <section class="section" aria-labelledby="deprem-title"><div class="wrap">
-  <div class="section-head"><div><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+  <div class="section-head"><div><span class="kicker">03 — Deprem</span><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
   <div class="table-wrap"><table><thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead><tbody id="home-quakes"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody></table></div>
 </div></section>
 
 <section class="section" aria-labelledby="projeler-title"><div class="wrap">
-  <div class="section-head"><div><h2 id="projeler-title">Oyunlar ve projeler</h2><p>İndirmeden, tarayıcıda açılan oyunlar ve uygulamalar.</p></div><a class="more" href="/projeler/">Tüm projeler <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+  <div class="section-head"><div><span class="kicker">04 — Projeler</span><h2 id="projeler-title">Oyunlar ve projeler</h2><p>İndirmeden, tarayıcıda açılan oyunlar ve uygulamalar.</p></div><a class="more" href="/projeler/">Tüm projeler <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
   <div class="grid g3"><article class="card app"><div class="app-head"><img class="logo pixel" src="/logos/abyss-diver.png" alt="Abyss Diver logosu" width="56" height="56" loading="lazy"><div><h3><a href="https://abyss-diver.rahimov.tr/" target="_blank" rel="noopener">Abyss Diver</a></h3><p class="app-meta">Macera oyunu · abyss-diver.rahimov.tr</p></div><span class="badge">Yeni</span></div>
 <p class="app-desc">Okyanusun derinliklerine inen bir dalgıcı yönetiyorsun. Her bölüm farklı bir harita ve farklı tehlikelerle geliyor; ilerledikçe oyun zorlaşıyor.</p><ul class="tags"><li>50 bölüm</li><li>Artan zorluk</li><li>Mobil uyumlu</li></ul>
 <div class="app-foot"><span class="open">Oyna <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></div></article><article class="card app"><div class="app-head"><img class="logo" src="/logos/lexirace.png" alt="LexiRace logosu" width="56" height="56" loading="lazy"><div><h3><a href="https://lexirace.rahimov.tr/" target="_blank" rel="noopener">LexiRace</a></h3><p class="app-meta">Kelime oyunu · lexirace.rahimov.tr</p></div></div>
@@ -146,7 +161,7 @@
 </div></section>
 
 <section class="section"><div class="wrap">
-  <div class="section-head"><h2>Sık sorulan sorular</h2></div>
+  <div class="section-head"><div><span class="kicker">05 — SSS</span><h2>Sık sorulan sorular</h2></div></div>
   <div class="faq"><details><summary>Bu site ne işe yarıyor? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Gün içinde sık sık baktığın bilgileri tek yerde topluyor: döviz ve altın fiyatları, hava durumu, son depremler, namaz vakitleri, kripto para fiyatları ve resmî tatiller. Ayrıca Kanan Rahimov'un geliştirdiği tarayıcı oyunlarına ve uygulamalara buradan ulaşabilirsin.</p></details><details><summary>Veriler nereden geliyor? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Her aracın sayfasında kaynağı yazıyor. Döviz ve altın için Truncgil Finans ve Frankfurter, hava durumu için Open-Meteo, depremler için Kandilli Rasathanesi verisi, namaz vakitleri için Aladhan, kripto için CoinGecko, tatiller için Nager.Date kullanılıyor.</p></details><details><summary>Fiyatlar anlık mı? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Döviz, altın ve kripto fiyatları birkaç dakikada bir güncellenir; saniyelik borsa verisi değildir. Banka ve kuyumcu fiyatları burada gördüğünden farklı olabilir. Buradaki bilgiler yatırım tavsiyesi değildir.</p></details><details><summary>Üye olmam ya da uygulama indirmem gerekiyor mu? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Hayır. Araçların hepsi tarayıcıda çalışır ve üyelik istemez. Seçtiğin şehir ve tema tercihi yalnızca kendi cihazında saklanır.</p></details><details><summary>Sitede neden reklam var? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Bazı sayfalarda Google reklamları gösterilebilir. Bu gelir, alan adı ve hizmet masraflarını karşılayıp araçların ücretsiz kalmasına yardım ediyor. Ayrıntılar <a href='/gizlilik/'>Gizlilik Politikası</a> sayfasında.</p></details></div>
 </div></section>
 
@@ -176,7 +191,7 @@
     <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Buradaki fiyat, hava, deprem ve vakit bilgileri üçüncü taraf kaynaklardan alınır, bilgilendirme amaçlıdır ve gecikmeli olabilir. Yatırım tavsiyesi değildir.</p>
   </div>
 </footer>
-<script src="/assets/site.js?v=2026-11-12" defer></script>
+<script src="/assets/site.js?v=2026-11-14" defer></script>
 <script>(function(){var E=[];window.addEventListener('error',function(e){E.push((e.message||'hata')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:''));});
 window.addEventListener('load',function(){setTimeout(function(){if(!document.querySelector('.skeleton'))return;var d=document.createElement('div');
 d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#7f1d1d;color:#fff;padding:10px 12px;border-radius:10px;font:12px/1.4 sans-serif';
