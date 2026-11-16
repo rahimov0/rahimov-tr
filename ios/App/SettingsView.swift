@@ -53,7 +53,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: { Text(T("Bildirimler")) } footer: {
-                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > Rahimov > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır."))
+                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır."))
                 }
 
                 Section {
@@ -69,7 +69,7 @@ struct SettingsView: View {
                 } header: { Text(T("Reklamlar")) } footer: { Text(T("Tek seferlik ödeme; aynı Apple hesabıyla diğer cihazlarında da geçerli olur.")) }
 
                 Section(T("Widget'lar")) {
-                    Text(T("Ana ekranda boş bir yere basılı tut, sol üstteki + düğmesine dokun ve “Rahimov”u ara. Panel, Namaz, Döviz ve Hava widget'larından istediğini ekleyebilirsin. Namaz widget'ı kilit ekranına da eklenebilir."))
+                    Text(T("Ana ekranda boş bir yere basılı tut, sol üstteki + düğmesine dokun ve “KROV”u ara. Panel, Namaz, Döviz ve Hava widget'larından istediğini ekleyebilirsin. Namaz widget'ı kilit ekranına da eklenebilir."))
                         .font(.callout).foregroundStyle(.secondary)
                 }
 
@@ -105,7 +105,7 @@ struct SettingsView: View {
         error = nil; busy = true
         switch m.authorizationStatus {
         case .notDetermined: m.requestWhenInUseAuthorization()
-        case .denied, .restricted: busy = false; error = T("Konum izni kapalı. Ayarlar > Rahimov > Konum'dan açabilirsin.")
+        case .denied, .restricted: busy = false; error = T("Konum izni kapalı. Ayarlar > KROV > Konum'dan açabilirsin.")
         default: m.requestLocation()
         }
     }

@@ -36,7 +36,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Rahimov
+        CFBundleDisplayName: KROV
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: tr
@@ -71,7 +71,7 @@ targets:
     info:
       path: Widgets/Info.plist
       properties:
-        CFBundleDisplayName: Rahimov
+        CFBundleDisplayName: KROV
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

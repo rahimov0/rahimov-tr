@@ -801,7 +801,7 @@ PAGES["/iletisim/"] = dict(page="iletisim", title="İletişim — Rahimov",
 
 # ------------------------------------------------------------------ Gizlilik
 PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahimov",
-    desc="rahimov.tr, alt alan adlarındaki projeler ve Rahimov iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.",
+    desc="rahimov.tr, alt alan adlarındaki projeler ve KROV iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.",
     crumbs=[(None, "Gizlilik Politikası")],
     body=page_head("Gizlilik Politikası", "Son güncelleme: 16 Kasım 2026") + """
 <section class="section"><div class="wrap"><div class="prose">
@@ -835,8 +835,8 @@ PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahi
     <li>Kişiselleştirilmiş reklamları <a href="https://adssettings.google.com" target="_blank" rel="noopener">Google Reklam Ayarları</a> sayfasından kapatabilirsin. Üçüncü taraf sağlayıcıların çerezlerini <a href="https://www.aboutads.info/choices" target="_blank" rel="noopener">aboutads.info</a> adresinden devre dışı bırakabilirsin.</li>
   </ul>
   <p>Google'ın verileri nasıl kullandığı hakkında daha fazla bilgi için: <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google iş ortaklarının sitelerini veya uygulamalarını kullandığınızda Google'ın verileri nasıl kullandığı</a>.</p>
-  <h2>Rahimov iOS uygulaması</h2>
-  <p>App Store'daki Rahimov uygulaması bu sitenin sayfalarını gösterir; yukarıdakilere ek olarak şunlar geçerlidir:</p>
+  <h2>KROV iOS uygulaması</h2>
+  <p>App Store'daki KROV uygulaması bu sitenin sayfalarını gösterir; yukarıdakilere ek olarak şunlar geçerlidir:</p>
   <ul>
     <li><strong>Konum:</strong> Yalnızca “Konumumu kullan” düğmesine bastığında, uygulama açıkken istenir. Yaklaşık koordinat cihazında saklanır ve hava durumu ile namaz vakitleri için Open-Meteo ve Aladhan'a gönderilir.</li>
     <li><strong>Bildirimler:</strong> Namaz, sahur ve iftar hatırlatmaları cihazında zamanlanır; bunun için bir sunucuya bilgi gönderilmez.</li>
