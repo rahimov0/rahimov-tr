@@ -284,7 +284,8 @@
         setText('#qk-place', q.title || '');
         setText('#qk-time', ago(q.date_time) + ' · ' + nf(+q.depth, 1) + ' km derinlik');
         setHTML('#qk-list', L.slice(1, 4).map(function (e) { return '<li><span>' + esc(e.title || '') + '</span><b>' + nf(+e.mag, 1) + '</b></li>'; }).join(''));
-      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); });
+        var hq = $('#home-quakes'); if (hq) hq.innerHTML = quakeRows(L.slice(0, 5));
+      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); var hq = $('#home-quakes'); if (hq) fail(hq.closest('.table-wrap'), quakes); });
     }
     function coin() {
       getJSON(API.crypto, 110).then(function (j) {
@@ -315,100 +316,229 @@
   }
 
   /* ---------- Döviz ---------- */
-  var CUR = [['USD', 'ABD Doları'], ['EUR', 'Euro'], ['GBP', 'İngiliz Sterlini'], ['CHF', 'İsviçre Frangı'], ['CAD', 'Kanada Doları'], ['AUD', 'Avustralya Doları'], ['JPY', 'Japon Yeni'], ['SAR', 'Suudi Riyali'], ['AED', 'BAE Dirhemi'], ['KWD', 'Kuveyt Dinarı'], ['QAR', 'Katar Riyali'], ['RUB', 'Rus Rublesi'], ['AZN', 'Azerbaycan Manatı'], ['CNY', 'Çin Yuanı'], ['SEK', 'İsveç Kronu'], ['NOK', 'Norveç Kronu'], ['DKK', 'Danimarka Kronu'], ['BGN', 'Bulgar Levası'], ['RON', 'Rumen Leyi'], ['PLN', 'Polonya Zlotisi']];
+  var CNAME = { TRY: 'Türk Lirası', USD: 'ABD Doları', EUR: 'Euro', GBP: 'İngiliz Sterlini', CHF: 'İsviçre Frangı', CAD: 'Kanada Doları', RUB: 'Rus Rublesi', AED: 'BAE Dirhemi', AUD: 'Avustralya Doları', DKK: 'Danimarka Kronu', SEK: 'İsveç Kronu', NOK: 'Norveç Kronu', JPY: 'Japon Yeni', KWD: 'Kuveyt Dinarı', ZAR: 'Güney Afrika Randı', BHD: 'Bahreyn Dinarı', LYD: 'Libya Dinarı', SAR: 'Suudi Riyali', IQD: 'Irak Dinarı', ILS: 'İsrail Şekeli', INR: 'Hindistan Rupisi', MXN: 'Meksika Pesosu', HUF: 'Macar Forinti', NZD: 'Yeni Zelanda Doları', BRL: 'Brezilya Reali', IDR: 'Endonezya Rupisi', CZK: 'Çek Korunası', PLN: 'Polonya Zlotisi', RON: 'Rumen Leyi', CNY: 'Çin Yuanı', ARS: 'Arjantin Pesosu', ALL: 'Arnavut Leki', AZN: 'Azerbaycan Manatı', BAM: 'Bosna-Hersek Markı', CLP: 'Şili Pesosu', COP: 'Kolombiya Pesosu', CRC: 'Kosta Rika Kolonu', DZD: 'Cezayir Dinarı', EGP: 'Mısır Lirası', HKD: 'Hong Kong Doları', ISK: 'İzlanda Kronu', KRW: 'Güney Kore Wonu', KZT: 'Kazakistan Tengesi', LBP: 'Lübnan Lirası', LKR: 'Sri Lanka Rupisi', MAD: 'Fas Dirhemi', MDL: 'Moldova Leyi', MKD: 'Makedon Dinarı', MYR: 'Malezya Ringgiti', OMR: 'Umman Riyali', PEN: 'Peru Solü', PHP: 'Filipin Pesosu', PKR: 'Pakistan Rupisi', QAR: 'Katar Riyali', RSD: 'Sırp Dinarı', SGD: 'Singapur Doları', SYP: 'Suriye Lirası', THB: 'Tayland Bahtı', TWD: 'Tayvan Doları', UAH: 'Ukrayna Grivnası', UYU: 'Uruguay Pesosu', GEL: 'Gürcü Larisi', TND: 'Tunus Dinarı', BGN: 'Bulgar Levası', VND: 'Vietnam Dongu' };
+  var FX_FIRST = ['USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AED', 'AZN', 'RUB', 'JPY', 'CNY', 'CAD', 'AUD', 'KWD', 'QAR', 'GEL', 'BGN', 'RON', 'PLN', 'SEK', 'NOK', 'DKK'];
+  var MAJORS = ['USD', 'EUR', 'GBP', 'CHF'];
+  var TRMON = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  function flag(c) { return 'https://flagcdn.com/' + (c === 'EUR' ? 'eu' : c.slice(0, 2).toLowerCase()) + '.svg'; }
+  function dec(v) { return v >= 100 ? 2 : v >= 1 ? 4 : 6; }
+  function parseAmt(s) {
+    s = String(s).replace(/\s/g, '');
+    if (s.indexOf(',') > -1) s = s.replace(/\./g, '').replace(',', '.');
+    else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+    return parseFloat(s);
+  }
+  function sparkPath(v, w, h, pad) {
+    var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
+    return v.map(function (y, i) { return (i ? 'L' : 'M') + (i / (v.length - 1) * w).toFixed(1) + ' ' + (h - pad - (y - mn) / sp * (h - pad * 2)).toFixed(1); }).join('');
+  }
+  /* Frankfurter: TRY bazlı tek istek, tersine çevrilip TL karşılığı yapılır */
+  function fxHistory() {
+    var d = new Date(); d.setDate(d.getDate() - 372);
+    var start = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    return getJSON('https://api.frankfurter.dev/v1/' + start + '..?base=TRY&symbols=' + MAJORS.join(','), 21600).then(function (j) {
+      var days = Object.keys(j.rates || {}).sort(), out = { days: days };
+      MAJORS.forEach(function (c) { out[c] = days.map(function (k) { var r = j.rates[k][c]; return r ? 1 / r : null; }); });
+      return out;
+    });
+  }
   function doviz() {
-    var rates = { TRY: 1 }, body = $('#fx-body');
-    var amt = $('#fx-amt'), from = $('#fx-from'), to = $('#fx-to'), out = $('#fx-out');
+    var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = null, chCur = 'USD', chDays = 90;
+    var amt = $('#fx-amt'), from = $('#fx-from'), to = $('#fx-to'), res = $('#fx-res'), body = $('#fx-body'), search = $('#fx-search');
+    function rate(c) { var x = R[c]; if (!x) return NaN; return mode === 'sell' ? x.s : mode === 'buy' ? x.b : (x.b + x.s) / 2; }
     function convert() {
-      var a = parseFloat(String(amt.value).replace(',', '.'));
-      if (!rates[from.value] || !rates[to.value] || isNaN(a)) { out.innerHTML = '<b>—</b><span>Bir tutar gir.</span>'; return; }
-      var v = a * rates[from.value] / rates[to.value];
-      out.innerHTML = '<b>' + nf(v, v < 10 ? 4 : 2) + ' ' + to.value + '</b><span>' + nf(a, 2) + ' ' + from.value + ' · 1 ' + from.value + ' = ' + nf(rates[from.value] / rates[to.value], 4) + ' ' + to.value + ' (alış–satış ortalaması)</span>';
+      $('#fx-from-flag').src = flag(from.value); $('#fx-to-flag').src = flag(to.value);
+      setText('#fx-from-code', from.value); setText('#fx-to-code', to.value); setText('#fx-from-name', CNAME[from.value] || from.value); setText('#fx-to-name', CNAME[to.value] || to.value);
+      var a = parseAmt(amt.value), r = rate(from.value) / rate(to.value);
+      if (isNaN(a) || isNaN(r)) { res.textContent = '—'; return; }
+      var v = a * r;
+      res.textContent = nf(v, v >= 1000 ? 2 : v >= 1 ? 2 : 4);
+      res.style.fontSize = res.textContent.length > 12 ? '30px' : '';
+      setText('#cv-rate', '1 ' + from.value + ' = ' + nf(r, dec(r)) + ' ' + to.value);
     }
-    function loadRates() {
+    function options() {
+      var codes = ['TRY'].concat(FX_FIRST.filter(function (c) { return R[c]; }), Object.keys(R).filter(function (c) { return c !== 'TRY' && FX_FIRST.indexOf(c) < 0; }).sort());
+      var html = codes.map(function (c) { return '<option value="' + c + '">' + c + ' · ' + (CNAME[c] || c) + '</option>'; }).join('');
+      var f = from.value || 'USD', t = to.value || 'TRY';
+      from.innerHTML = html; to.innerHTML = html; from.value = f; to.value = t;
+    }
+    function setFrom(c) { from.value = c; if (to.value === c) to.value = 'TRY'; convert(); $('#conv').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    function majors() {
+      var el = $('#fx-majors'); if (!el) return;
+      el.innerHTML = MAJORS.filter(function (c) { return R[c]; }).map(function (c) {
+        var x = R[c], sv = hist && hist[c] ? hist[c].filter(Boolean).slice(-30) : null;
+        return '<button type="button" class="b major" data-c="' + c + '"><span class="mj-top"><img src="' + flag(c) + '" alt="" width="22" height="22"><b>' + c + '</b><span class="muted">' + CNAME[c] + '</span></span>' +
+          '<span class="mj-val num">' + nf(x.s, 4) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· alış ' + nf(x.b, 4) + '</span></span>' +
+          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '') + '</button>';
+      }).join('');
+      $$('.major', el).forEach(function (b) { b.addEventListener('click', function () { setFrom(b.dataset.c); }); });
+    }
+    function table() {
+      var q = search.value.trim().toLocaleLowerCase('tr');
+      var codes = FX_FIRST.filter(function (c) { return R[c]; }).concat(Object.keys(R).filter(function (c) { return c !== 'TRY' && FX_FIRST.indexOf(c) < 0; }).sort());
+      var rows = codes.filter(function (c) { return !q || (c + ' ' + (CNAME[c] || '')).toLocaleLowerCase('tr').indexOf(q) > -1; }).map(function (c) {
+        var x = R[c], d = dec(x.s), spr = x.s ? (x.s - x.b) / x.s * 100 : 0;
+        return '<tr data-c="' + c + '" tabindex="0"><td><span class="cur"><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
+          '<td data-l="Alış">' + nf(x.b, d) + ' ₺</td><td data-l="Satış"><b>' + nf(x.s, d) + ' ₺</b></td><td data-l="Makas">%' + nf(spr, 2) + '</td><td data-l="Günlük">' + chg(x.c) + '</td></tr>';
+      }).join('');
+      body.innerHTML = rows || '<tr><td colspan="5" class="muted" style="text-align:center">Aramana uyan para birimi yok.</td></tr>';
+    }
+    body.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-c]'); if (tr) setFrom(tr.dataset.c); });
+    body.addEventListener('keydown', function (e) { var tr = e.target.closest('tr[data-c]'); if (tr && e.key === 'Enter') setFrom(tr.dataset.c); });
+    search.addEventListener('input', table);
+    function load() {
       getJSON(API.fin, 110).then(function (j) {
-        var rows = '';
-        CUR.forEach(function (c) {
-          var x = j[c[0]]; if (!x || typeof x.Selling !== 'number') return;
-          rates[c[0]] = (x.Buying + x.Selling) / 2;
-          rows += '<tr><td><b>' + c[0] + '</b><span class="sub">' + c[1] + '</span></td><td>' + nf(x.Buying, 4) + '</td><td>' + nf(x.Selling, 4) + '</td><td>' + chg(x.Change) + '</td></tr>';
-        });
-        body.innerHTML = rows;
+        Object.keys(j).forEach(function (k) { var x = j[k]; if (x && x.Type === 'Currency' && x.Selling > 0) R[k] = { b: x.Buying, s: x.Selling, c: x.Change }; });
+        if (!from.options.length) options();
+        convert(); majors(); table();
         setText('#fx-updated', stamp(j.Update_Date));
-        if (!from.options.length) {
-          var opts = [['TRY', 'Türk Lirası']].concat(CUR.filter(function (c) { return rates[c[0]]; })).map(function (c) { return '<option value="' + c[0] + '">' + c[0] + ' — ' + c[1] + '</option>'; }).join('');
-          from.innerHTML = opts; to.innerHTML = opts; from.value = 'USD'; to.value = 'TRY';
-        }
-        convert();
-      }).catch(function () { fail(body.closest('.table-wrap'), function () { location.reload(); }); });
+      }).catch(function () { fail(body.closest('.table-wrap'), load); setText('#fx-updated', 'Veri alınamadı'); });
     }
-    [amt, from, to].forEach(function (e) { e.addEventListener('input', convert); });
+    /* çevirici olayları */
+    amt.addEventListener('input', convert);
+    from.addEventListener('change', convert); to.addEventListener('change', convert);
     $('#fx-swap').addEventListener('click', function () { var t = from.value; from.value = to.value; to.value = t; convert(); });
-    loadRates(); setInterval(loadRates, 120000);
-
-    var chartEl = $('#fx-chart');
-    function chart(base) {
-      var d = new Date(Date.now() - 60 * 864e5);
-      var start = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-      getJSON(API.fxSeries(base, start), 3600).then(function (j) {
-        var pts = Object.keys(j.rates).sort().map(function (k) { return [k, j.rates[k].TRY]; });
-        drawChart(chartEl, pts, base + '/TRY');
-      }).catch(function () { chartEl.innerHTML = ''; setText('#fx-chart-note', 'Grafik verisi şu an alınamadı.'); });
-    }
-    $$('.fx-base').forEach(function (b) {
+    $$('.quick button').forEach(function (b) { b.addEventListener('click', function () { amt.value = nf(+b.dataset.v, 0); convert(); }); });
+    $$('#conv .seg-btn').forEach(function (b) {
       b.addEventListener('click', function () {
-        $$('.fx-base').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-        chart(b.dataset.base);
+        mode = b.dataset.mode;
+        $$('#conv .seg-btn').forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
+        setText('#cv-note', mode === 'sell' ? 'Satış fiyatıyla: banka ya da büro sana döviz satarken bu fiyatı uygular.' : mode === 'buy' ? 'Alış fiyatıyla: elindeki dövizi bozdurduğunda eline yaklaşık bu kadar geçer.' : 'Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.');
+        convert();
       });
     });
-    chart('USD');
-  }
-  function drawChart(svg, pts, label) {
-    if (!pts.length) return;
-    var W = 600, H = 220, L = 8, R = 8, T = 16, B = 28;
-    var vals = pts.map(function (p) { return p[1]; });
-    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
-    if (max === min) { max += 1; min -= 1; }
-    var x = function (i) { return L + i * (W - L - R) / (pts.length - 1 || 1); };
-    var y = function (v) { return T + (max - v) * (H - T - B) / (max - min); };
-    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[1]).toFixed(1); }).join(' ');
-    var area = line + ' L' + x(pts.length - 1).toFixed(1) + ' ' + (H - B) + ' L' + L + ' ' + (H - B) + ' Z';
-    var f = function (s) { var a = s.split('-'); return +a[2] + ' ' + MONTHS[+a[1] - 1].slice(0, 3); };
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    svg.setAttribute('aria-label', label + ' kuru, ' + f(pts[0][0]) + ' – ' + f(pts[pts.length - 1][0]));
-    svg.innerHTML = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '"/>' +
-      '<path class="area" d="' + area + '"/><path class="line" d="' + line + '"/>' +
-      '<text x="' + L + '" y="' + (H - 8) + '">' + f(pts[0][0]) + '</text>' +
-      '<text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + f(pts[pts.length - 1][0]) + '</text>' +
-      '<text x="' + L + '" y="12">en yüksek ' + nf(max, 4) + ' · en düşük ' + nf(min, 4) + '</text>';
+    /* grafik */
+    var box = $('#ch-box'), svg = $('#fx-chart'), tip = $('#ch-tip'), cur = null;
+    function draw() {
+      if (!hist) return;
+      var days = hist.days, vals = hist[chCur], pts = [];
+      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - chDays);
+      days.forEach(function (d, i) { if (vals[i] && new Date(d) >= cutoff) pts.push([d, vals[i]]); });
+      if (pts.length < 2) return;
+      var W = box.clientWidth || 800, H = 240, P = 10, v = pts.map(function (p) { return p[1]; });
+      var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
+      var X = function (i) { return i / (pts.length - 1) * W; }, Y = function (y) { return H - 24 - (y - mn) / sp * (H - 24 - P * 2) - P; };
+      var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p[1]).toFixed(1); }).join('');
+      var up = v[v.length - 1] >= v[0];
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      var lab = function (d) { var x = new Date(d); return x.getDate() + ' ' + TRMON[x.getMonth()] + (chDays > 200 ? ' ' + String(x.getFullYear()).slice(2) : ''); };
+      svg.innerHTML = '<line x1="0" x2="' + W + '" y1="' + Y(mx) + '" y2="' + Y(mx) + '" stroke-dasharray="3 4"/><line x1="0" x2="' + W + '" y1="' + Y(mn) + '" y2="' + Y(mn) + '" stroke-dasharray="3 4"/>' +
+        '<path class="area' + (up ? '' : ' dn') + '" d="' + line + 'L' + W + ' ' + (H - 24) + 'L0 ' + (H - 24) + 'Z"/><path class="line' + (up ? '' : ' dn') + '" d="' + line + '"/>' +
+        '<text x="4" y="' + (Y(mx) + 15) + '">' + nf(mx, 2) + '</text><text x="4" y="' + (Y(mn) + 14) + '">' + nf(mn, 2) + '</text>' +
+        '<text x="0" y="' + (H - 4) + '">' + lab(pts[0][0]) + '</text><text x="' + W + '" y="' + (H - 4) + '" text-anchor="end">' + lab(pts[pts.length - 1][0]) + '</text>' +
+        '<g id="ch-hl" style="display:none"><line id="ch-vl" y1="0" y2="' + (H - 24) + '"/><circle id="ch-dot" r="5"/></g>';
+      var ch = (v[v.length - 1] / v[0] - 1) * 100;
+      setText('#ch-name', CNAME[chCur].replace('ABD Doları', 'Dolar').replace('İngiliz Sterlini', 'Sterlin').replace('İsviçre Frangı', 'Frank'));
+      setHTML('#ch-stats', 'Son: <b>' + nf(v[v.length - 1], 4) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '+' : '−') + '%' + nf(Math.abs(ch), 2) + '</span> · en düşük ' + nf(mn, 2) + ' · en yüksek ' + nf(mx, 2));
+      cur = { pts: pts, X: X, Y: Y, W: W };
+    }
+    function hover(e) {
+      if (!cur) return;
+      var r = box.getBoundingClientRect(), fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), i = Math.round(fx * (cur.pts.length - 1)), p = cur.pts[i];
+      var hl = $('#ch-hl'); if (!hl) return; hl.style.display = '';
+      var x = cur.X(i), y = cur.Y(p[1]);
+      $('#ch-vl').setAttribute('x1', x); $('#ch-vl').setAttribute('x2', x); $('#ch-dot').setAttribute('cx', x); $('#ch-dot').setAttribute('cy', y);
+      var d = new Date(p[0]);
+      tip.hidden = false; tip.innerHTML = '<small>' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</small><b>' + nf(p[1], 4) + ' ₺</b>';
+      tip.style.left = Math.max(60, Math.min(r.width - 60, x / cur.W * r.width)) + 'px';
+    }
+    box.addEventListener('pointermove', hover);
+    box.addEventListener('pointerleave', function () { tip.hidden = true; var hl = $('#ch-hl'); if (hl) hl.style.display = 'none'; });
+    function segGroup(id, attr, fn) {
+      $$('#' + id + ' .seg-btn').forEach(function (b) {
+        b.addEventListener('click', function () { $$('#' + id + ' .seg-btn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); fn(b.dataset[attr]); draw(); });
+      });
+    }
+    segGroup('ch-cur', 'c', function (v) { chCur = v; });
+    segGroup('ch-range', 'd', function (v) { chDays = +v; });
+    var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(draw, 150); });
+    fxHistory().then(function (h) { hist = h; draw(); majors(); }).catch(function () { setText('#ch-stats', 'Grafik verisi alınamadı.'); });
+    load(); setInterval(load, 120000);
   }
 
   /* ---------- Altın ---------- */
-  var GOLD = [['GRA', 'Gram altın', '₺'], ['HAS', 'Has altın (gram)', '₺'], ['CEYREKALTIN', 'Çeyrek altın', '₺'], ['YARIMALTIN', 'Yarım altın', '₺'], ['TAMALTIN', 'Tam altın', '₺'], ['CUMHURIYETALTINI', 'Cumhuriyet altını', '₺'], ['ATAALTIN', 'Ata altın', '₺'], ['RESATALTIN', 'Reşat altın', '₺'], ['14AYARALTIN', '14 ayar altın (gram)', '₺'], ['18AYARALTIN', '18 ayar altın (gram)', '₺'], ['GUMUS', 'Gümüş (gram)', '₺'], ['ONS', 'Ons altın', '$']];
+  var AU = {
+    GRA: ['Gram altın', '24 ayar · 1 gram', 'gram', 'gram'], HAS: ['Has altın', '24 ayar, işçiliksiz · 1 gram', 'gram', 'gram'],
+    '18AYARALTIN': ['18 ayar altın', '1 gram', 'gram', 'gram'], '14AYARALTIN': ['14 ayar altın', '1 gram', 'gram', 'gram'],
+    CEYREKALTIN: ['Çeyrek altın', '22 ayar · 1,75 g', 'adet', 'coin'], YARIMALTIN: ['Yarım altın', '22 ayar · 3,5 g', 'adet', 'coin'],
+    TAMALTIN: ['Tam altın', '22 ayar · 7 g', 'adet', 'coin'], CUMHURIYETALTINI: ['Cumhuriyet altını', '22 ayar · 7,2 g', 'adet', 'coin'],
+    ATAALTIN: ['Ata altın', '22 ayar · 7,2 g', 'adet', 'coin'], RESATALTIN: ['Reşat altın', '22 ayar · 7,2 g', 'adet', 'coin'],
+    HAMITALTIN: ['Hamit altın', '22 ayar · 7,2 g', 'adet', 'coin'], GREMSEALTIN: ['Gremse altın', '22 ayar · 17,5 g', 'adet', 'coin'],
+    IKIBUCUKALTIN: ['İkibuçuk altın', '22 ayar · 18 g', 'adet', 'coin'], BESLIALTIN: ['Beşli altın', '22 ayar · 36 g', 'adet', 'coin'],
+    GUMUS: ['Gümüş', '1 gram', 'gram', 'metal'], GPL: ['Platin', '1 gram', 'gram', 'metal'], PAL: ['Paladyum', '1 gram', 'gram', 'metal']
+  };
+  var AU_ORDER = ['GRA', 'CEYREKALTIN', 'YARIMALTIN', 'TAMALTIN', 'CUMHURIYETALTINI', 'ATAALTIN', 'RESATALTIN', 'HAMITALTIN', 'GREMSEALTIN', 'IKIBUCUKALTIN', 'BESLIALTIN', 'HAS', '18AYARALTIN', '14AYARALTIN', 'GUMUS', 'GPL', 'PAL'];
   function altin() {
-    var data = {}, body = $('#gold-body'), type = $('#g-type'), qty = $('#g-qty'), out = $('#g-out');
-    function calc() {
-      var x = data[type.value], q = parseFloat(String(qty.value).replace(',', '.'));
-      if (!x || isNaN(q)) { out.innerHTML = '<b>—</b><span>Bir adet ya da gram gir.</span>'; return; }
-      out.innerHTML = '<b>' + nf(q * x.Selling) + ' ₺</b><span>Satış fiyatıyla. Bozdurursan (alış fiyatıyla) yaklaşık ' + nf(q * x.Buying) + ' ₺.</span>';
+    var P = {}, usd = 0, BK = load('rahimov.basket');
+    if (!BK || !BK.length) BK = [{ k: 'GRA', q: 1 }];
+    function keep() { save('rahimov.basket', BK); }
+    function opts(sel) { return AU_ORDER.filter(function (k) { return P[k] || !Object.keys(P).length; }).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + AU[k][0] + '</option>'; }).join(''); }
+    function renderBasket() {
+      var ul = $('#bk-rows');
+      ul.innerHTML = BK.map(function (it, i) {
+        var unit = AU[it.k] ? AU[it.k][2] : '';
+        return '<li data-i="' + i + '"><select class="select bk-k" aria-label="Altın türü">' + opts(it.k) + '</select>' +
+          '<span class="bk-q"><input class="input num" inputmode="decimal" value="' + String(it.q).replace('.', ',') + '" aria-label="Miktar"><small>' + unit + '</small></span>' +
+          '<span class="bk-v num">–</span><button type="button" class="icon-btn bk-del" aria-label="Satırı sil">' + '<svg class="icon"><use href="#i-x"/></svg></button></li>';
+      }).join('');
+      $$('li', ul).forEach(function (li) {
+        var i = +li.dataset.i;
+        $('.bk-k', li).addEventListener('change', function (e) { BK[i].k = e.target.value; keep(); renderBasket(); });
+        $('input', li).addEventListener('input', function (e) { var v = parseAmt(e.target.value); BK[i].q = isNaN(v) ? 0 : v; keep(); totals(); });
+        $('.bk-del', li).addEventListener('click', function () { BK.splice(i, 1); if (!BK.length) BK.push({ k: 'GRA', q: 1 }); keep(); renderBasket(); });
+      });
+      totals();
+    }
+    function totals() {
+      var tb = 0, ts = 0;
+      $$('#bk-rows li').forEach(function (li) {
+        var it = BK[+li.dataset.i], p = P[it.k];
+        var v = p ? it.q * p.s : NaN; $('.bk-v', li).textContent = isNaN(v) ? '–' : nf(v, 0) + ' ₺';
+        if (p) { tb += it.q * p.b; ts += it.q * p.s; }
+      });
+      setText('#bk-buy', nf(tb, 2) + ' ₺'); setText('#bk-sell', nf(ts, 2) + ' ₺');
+      setText('#bk-usd', usd ? 'Dolar karşılığı (bozdurma): yaklaşık ' + nf(tb / usd, 0) + ' $' : '');
+    }
+    $('#bk-add').addEventListener('click', function () { BK.push({ k: 'CEYREKALTIN', q: 1 }); keep(); renderBasket(); var l = $$('#bk-rows input'); if (l.length) l[l.length - 1].focus(); });
+    $('#bk-reset').addEventListener('click', function () { BK = [{ k: 'GRA', q: 1 }]; keep(); renderBasket(); });
+    function card(k) {
+      var p = P[k], a = AU[k], spr = (p.s - p.b) / p.s * 100;
+      return '<article class="au-card"><div class="au-name"><h3>' + a[0] + '</h3><small>' + a[1] + '</small></div>' +
+        '<div class="au-price num">' + nf(p.s, 2) + ' ₺</div>' +
+        '<div class="au-meta num"><span>alış ' + nf(p.b, 2) + ' ₺</span><span>makas %' + nf(spr, 2) + '</span></div>' +
+        '<div class="au-foot">' + chg(p.c) + '<button type="button" class="linkbtn au-add" data-k="' + k + '" aria-label="' + a[0] + ' hesaba ekle">' + '<svg class="icon"><use href="#i-plus"/></svg>Ekle</button></div></article>';
+    }
+    function grids() {
+      var g = { coin: '', gram: '', metal: '' };
+      AU_ORDER.forEach(function (k) { if (P[k]) g[AU[k][3]] += card(k); });
+      setHTML('#au-coins', g.coin); setHTML('#au-gram', g.gram); setHTML('#au-metal', g.metal);
+      $$('.au-add').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var ex = BK.filter(function (x) { return x.k === b.dataset.k; })[0];
+          if (ex) ex.q += 1; else BK.push({ k: b.dataset.k, q: 1 });
+          keep(); renderBasket(); b.textContent = 'Eklendi'; setTimeout(function () { b.innerHTML = '<svg class="icon"><use href="#i-plus"/></svg>Ekle'; }, 1400);
+        });
+      });
+    }
+    function hero() {
+      var g = P.GRA; if (!g) return;
+      setText('#au-gra', nf(g.s, 2) + ' ₺');
+      setHTML('#au-gra-sub', chg(g.c) + ' <span class="muted">bugün</span>');
+      setText('#au-buy', nf(g.b, 2) + ' ₺');
+      setText('#au-spread', 'makas %' + nf((g.s - g.b) / g.s * 100, 2));
+      if (usd) { setText('#au-usd', nf(g.s / usd, 2) + ' $'); setText('#au-ons', nf(g.s / usd * 31.1035, 0) + ' $'); }
+      if (P.GUMUS) setText('#au-ag', nf(P.GUMUS.s, 2) + ' ₺');
     }
     function go() {
       getJSON(API.fin, 110).then(function (j) {
-        var rows = '';
-        GOLD.forEach(function (g) {
-          var x = j[g[0]]; if (!x || typeof x.Selling !== 'number') return;
-          data[g[0]] = x;
-          rows += '<tr><td><b>' + g[1] + '</b></td><td>' + nf(x.Buying) + ' ' + g[2] + '</td><td>' + nf(x.Selling) + ' ' + g[2] + '</td><td>' + chg(x.Change) + '</td></tr>';
-        });
-        body.innerHTML = rows;
+        var first = !Object.keys(P).length;
+        AU_ORDER.forEach(function (k) { var x = j[k]; if (x && x.Selling > 0) P[k] = { b: x.Buying, s: x.Selling, c: x.Change }; });
+        usd = j.USD && j.USD.Selling || 0;
+        hero(); grids(); if (first) renderBasket(); else totals();
         setText('#gold-updated', stamp(j.Update_Date));
-        if (!type.options.length) {
-          type.innerHTML = GOLD.filter(function (g) { return data[g[0]] && g[2] === '₺'; }).map(function (g) { return '<option value="' + g[0] + '">' + g[1] + '</option>'; }).join('');
-        }
-        calc();
-      }).catch(function () { fail(body.closest('.table-wrap'), function () { location.reload(); }); });
+      }).catch(function () { fail($('#au-coins'), go); setText('#gold-updated', 'Veri alınamadı'); });
     }
-    [type, qty].forEach(function (e) { e.addEventListener('input', calc); });
+    renderBasket();
     go(); setInterval(go, 120000);
   }
 

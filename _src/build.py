@@ -10,6 +10,9 @@ SPRITE = open(os.path.join(ROOT, "_src", "sprite.html"), encoding="utf-8").read(
 ICONS = """
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="i-fx" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
+<symbol id="i-swapv" viewBox="0 0 24 24"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
 <symbol id="i-gold" viewBox="0 0 24 24"><path d="M8 10h8l2 5H6zM3 20l1.5-4h6L12 20zM12 20l1.5-4h6L21 20zM9 6l1-2M15 6l-1-2M12 5V3"/></symbol>
 <symbol id="i-wx" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M8 2v1M2 8h1M3.8 3.8l.7.7M9 19h8a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.3 3.3 0 0 0 9 19z"/></symbol>
 <symbol id="i-quake" viewBox="0 0 24 24"><path d="M2 12h4l2-6 4 12 3-9 2 3h5"/></symbol>
@@ -21,8 +24,8 @@ ICONS = """
 """
 
 TOOLS = [
-    ("doviz", "/doviz/", "i-fx", "Döviz kurları", "Dolar, euro, sterlin ve 20 para biriminin alış–satış fiyatı, çevirici ve 60 günlük grafik."),
-    ("altin", "/altin/", "i-gold", "Altın fiyatları", "Gram, çeyrek, yarım, tam ve Cumhuriyet altını fiyatları ile altın hesaplayıcı."),
+    ("doviz", "/doviz/", "i-fx", "Döviz kurları", "Dolar, euro ve 60'tan fazla para birimi; alırken ya da bozdururken hesaplayan çevirici ve 1 yıllık grafik."),
+    ("altin", "/altin/", "i-gold", "Altın fiyatları", "Gram, çeyrek, Cumhuriyet, beşli altın fiyatları; elindeki altınların toplam değerini hesapla."),
     ("hava", "/hava-durumu/", "i-wx", "Hava durumu", "Şehrini ara; anlık sıcaklık, saatlik tahmin ve 7 günlük hava durumu."),
     ("deprem", "/deprem/", "i-quake", "Son depremler", "Kandilli Rasathanesi verileriyle Türkiye ve çevresindeki son 100 deprem."),
     ("namaz", "/namaz-vakitleri/", "i-pray", "Namaz vakitleri", "Bulunduğun şehir için günlük ve aylık vakitler, sıradaki vakte geri sayım."),
@@ -329,33 +332,56 @@ PAGES["/araclar/"] = dict(page="araclar", title="Ücretsiz günlük araçlar —
 
 # ------------------------------------------------------------------ Döviz
 PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici — Dolar, Euro, Sterlin kaç TL?",
-    desc="Güncel dolar, euro, sterlin ve 20 para biriminin alış–satış fiyatı. Döviz çevirici ve 60 günlük kur grafiği. Ücretsiz, üyeliksiz.",
+    desc="Güncel dolar, euro, sterlin ve 60'tan fazla para biriminin alış–satış fiyatı, makas oranı, döviz çevirici ve 1 yıllık kur grafiği. Ücretsiz, üyeliksiz.",
     crumbs=[("/araclar/", "Araçlar"), (None, "Döviz kurları")],
-    body=page_head("Döviz kurları ve çevirici", "Serbest piyasa alış–satış fiyatları, hızlı bir çevirici ve son 60 günün grafiği.",
+    body=page_head("Döviz kurları ve çevirici", "Dolar, euro ve 60'tan fazla para birimi. Alırken ya da bozdururken eline ne geçeceğini hesapla, kurun bir yıllık seyrine bak.",
         '<p class="updated"><span class="live-dot"></span><span id="fx-updated">Yükleniyor…</span> · 2 dakikada bir yenilenir</p>') + f"""
 <section class="section"><div class="wrap">
-  <div class="card" style="margin-bottom:24px">
-    <h2 style="font-size:22px;line-height:28px;margin-bottom:16px">Döviz çevirici</h2>
-    <div class="form-row">
-      <div class="field"><label for="fx-amt">Tutar</label><input class="input num" id="fx-amt" type="text" inputmode="decimal" value="100"></div>
-      <div class="field"><label for="fx-from">Bu para biriminden</label><select class="select" id="fx-from"></select></div>
-      <button class="icon-btn swap" type="button" id="fx-swap" aria-label="Para birimlerini değiştir" style="height:48px;width:48px">{icon('i-fx')}</button>
-      <div class="field"><label for="fx-to">Bu para birimine</label><select class="select" id="fx-to"></select></div>
+  <div class="fx-top">
+    <div class="b conv" id="conv">
+      <div class="b-head"><span>Döviz çevirici</span><span class="num" id="cv-rate">&nbsp;</span></div>
+      <div class="seg" role="radiogroup" aria-label="Hangi fiyatla hesaplansın">
+        <button type="button" role="radio" class="seg-btn" data-mode="sell" aria-checked="false">Döviz alıyorum</button>
+        <button type="button" role="radio" class="seg-btn" data-mode="mid" aria-checked="true">Ortalama</button>
+        <button type="button" role="radio" class="seg-btn" data-mode="buy" aria-checked="false">Döviz bozduruyorum</button>
+      </div>
+      <div class="cv-box">
+        <label class="cv-lab" for="fx-amt">Tutar · <span id="fx-from-name">ABD Doları</span></label>
+        <div class="cv-row"><input class="cv-in num" id="fx-amt" type="text" inputmode="decimal" autocomplete="off" value="100" aria-describedby="cv-rate">
+          <label class="cv-cur"><img id="fx-from-flag" alt="" width="24" height="24"><span class="cv-code" id="fx-from-code">USD</span>{icon('i-chev')}<select id="fx-from" aria-label="Çevrilecek para birimi"></select></label></div>
+      </div>
+      <button class="cv-swap" type="button" id="fx-swap" aria-label="Para birimlerini yer değiştir">{icon('i-swapv')}</button>
+      <div class="cv-box cv-out">
+        <span class="cv-lab">Karşılığı · <span id="fx-to-name">Türk Lirası</span></span>
+        <div class="cv-row"><output class="cv-res num" id="fx-res" for="fx-amt fx-from fx-to" aria-live="polite">—</output>
+          <label class="cv-cur"><img id="fx-to-flag" alt="" width="24" height="24"><span class="cv-code" id="fx-to-code">TRY</span>{icon('i-chev')}<select id="fx-to" aria-label="Hedef para birimi"></select></label></div>
+      </div>
+      <div class="quick" aria-label="Hızlı tutar"><button type="button" data-v="1">1</button><button type="button" data-v="100">100</button><button type="button" data-v="500">500</button><button type="button" data-v="1000">1.000</button><button type="button" data-v="10000">10.000</button></div>
+      <p class="b-foot" id="cv-note">Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.</p>
     </div>
-    <div class="result" id="fx-out" aria-live="polite"><b>—</b><span>Kurlar yükleniyor…</span></div>
+    <div class="fx-majors" id="fx-majors" aria-label="Öne çıkan kurlar"></div>
   </div>
 
-  <div class="table-wrap"><table>
-    <thead><tr><th>Para birimi</th><th>Alış (₺)</th><th>Satış (₺)</th><th>Günlük değişim</th></tr></thead>
-    <tbody id="fx-body"><tr><td colspan="4" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
+  <div class="b chart-card" style="margin-top:var(--gap)">
+    <div class="chart-head">
+      <div><h2 class="chart-title"><span id="ch-name">Dolar</span> / TL</h2><p class="b-sub num" id="ch-stats">&nbsp;</p></div>
+      <div class="chart-ctrl">
+        <div class="seg seg-sm" id="ch-cur"><button type="button" class="seg-btn" data-c="USD" aria-pressed="true">USD</button><button type="button" class="seg-btn" data-c="EUR" aria-pressed="false">EUR</button><button type="button" class="seg-btn" data-c="GBP" aria-pressed="false">GBP</button><button type="button" class="seg-btn" data-c="CHF" aria-pressed="false">CHF</button></div>
+        <div class="seg seg-sm" id="ch-range"><button type="button" class="seg-btn" data-d="30" aria-pressed="false">1 ay</button><button type="button" class="seg-btn" data-d="90" aria-pressed="true">3 ay</button><button type="button" class="seg-btn" data-d="365" aria-pressed="false">1 yıl</button></div>
+      </div>
+    </div>
+    <div class="chart-box" id="ch-box"><svg class="chart" id="fx-chart" role="img" aria-label="Kur grafiği" preserveAspectRatio="none"></svg><div class="ch-tip" id="ch-tip" hidden></div></div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Grafik merkez bankalarının günlük referans kurlarını gösterir; hafta sonu ve tatillerde veri yoktur. Üzerinde gezinerek gün gün değeri gör.</p>
+  </div>
+
+  <div class="list-head">
+    <h2>Tüm kurlar</h2>
+    <div class="list-tools"><input class="input" id="fx-search" type="search" placeholder="Ara: dolar, AZN, riyal…" aria-label="Para birimi ara"></div>
+  </div>
+  <div class="table-wrap"><table class="rtable">
+    <thead><tr><th>Para birimi</th><th>Alış</th><th>Satış</th><th>Makas</th><th>Günlük</th></tr></thead>
+    <tbody id="fx-body"><tr><td colspan="5" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
-
-  <div class="card" style="margin-top:24px">
-    <div class="section-head" style="margin-bottom:12px"><h2 style="font-size:22px;line-height:28px">Son 60 gün</h2>
-      <div class="chips"><button class="chip fx-base" type="button" data-base="USD" aria-pressed="true">Dolar</button><button class="chip fx-base" type="button" data-base="EUR" aria-pressed="false">Euro</button><button class="chip fx-base" type="button" data-base="GBP" aria-pressed="false">Sterlin</button></div></div>
-    <svg class="chart" id="fx-chart" role="img" preserveAspectRatio="none"></svg>
-    <p class="muted" id="fx-chart-note" style="font-size:13px;margin-top:8px">Grafik, merkez bankalarının yayımladığı günlük referans kurlarını gösterir; hafta sonları ve tatillerde veri yoktur.</p>
-  </div>
 
   <div class="prose">
     <h2>Alış ve satış fiyatı ne demek?</h2>
@@ -364,7 +390,7 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
     <h2>Buradaki kur ile bankamdaki kur neden farklı?</h2>
     <p>Tabloda gördüğün fiyatlar serbest piyasadaki ortalama alış–satış fiyatlarıdır. Her banka ve döviz bürosu bu fiyatın üzerine kendi makasını koyar. Ayrıca Türkiye'de döviz alırken satış tutarı üzerinden <strong>kambiyo vergisi (BSMV)</strong> ödenir; bu vergi de ödediğin toplam tutarı artırır. Sonuçta bankada göreceğin fiyat buradakinden biraz farklı olur. Büyük tutarlı işlemlerde birkaç kurumun fiyatını karşılaştırmak işe yarar.</p>
     <h2>Çevirici nasıl hesaplıyor?</h2>
-    <p>Çevirici, her para biriminin alış ve satış fiyatının ortalamasını kullanır. İki yabancı para birimi arasında çeviri yaparken (örneğin euro → dolar) her ikisinin TL karşılığı üzerinden <strong>çapraz kur</strong> hesaplar. Sonuç yaklaşık bir değerdir; gerçek işlemde eline geçecek tutar, işlem yaptığın kurumun fiyatına göre değişir.</p>
+    <p>Çeviricide üç seçenek var. <strong>Döviz alıyorum</strong> satış fiyatını, <strong>Döviz bozduruyorum</strong> alış fiyatını, <strong>Ortalama</strong> ise ikisinin ortasını kullanır. İki yabancı para birimi arasında çeviri yaparken (örneğin euro → dolar) her ikisinin TL karşılığı üzerinden <strong>çapraz kur</strong> hesaplar. Sonuç yaklaşık bir değerdir; gerçek işlemde eline geçecek tutar, işlem yaptığın kurumun fiyatına göre değişir.</p>
     <h2>Merkez Bankası kuru nedir?</h2>
     <p>Türkiye Cumhuriyet Merkez Bankası (TCMB) her iş günü öğleden sonra <strong>gösterge niteliğinde kurlar</strong> yayımlar. Bu kurlar resmî işlemlerde, vergi hesaplarında, fatura ve sözleşmelerde kullanılır. Serbest piyasadaki anlık fiyat gün içinde TCMB kurundan uzaklaşabilir. Sayfadaki grafik, bu tür günlük referans kurlarına dayanır; tablo ise piyasa fiyatını gösterir.</p>
     <h2>Sık sorulan sorular</h2>
@@ -382,22 +408,42 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
 PAGES["/altin/"] = dict(page="altin", title="Altın fiyatları — Gram, çeyrek, yarım, tam altın kaç TL?",
     desc="Güncel gram altın, çeyrek altın, yarım, tam ve Cumhuriyet altını alış–satış fiyatları. Altın hesaplayıcı ile elindeki altının değerini bul.",
     crumbs=[("/araclar/", "Araçlar"), (None, "Altın fiyatları")],
-    body=page_head("Altın fiyatları", "Gram, çeyrek, yarım, tam ve Cumhuriyet altınının alış–satış fiyatları ve basit bir hesaplayıcı.",
+    body=page_head("Altın fiyatları", "Gram, çeyrek, yarım, tam, Cumhuriyet ve beşli altın. Elindeki altınların bugün kaç lira ettiğini tek ekranda hesapla.",
         '<p class="updated"><span class="live-dot"></span><span id="gold-updated">Yükleniyor…</span> · 2 dakikada bir yenilenir</p>') + f"""
 <section class="section"><div class="wrap">
-  <div class="card" style="margin-bottom:24px">
-    <h2 style="font-size:22px;line-height:28px;margin-bottom:16px">Altın hesaplayıcı</h2>
-    <div class="grid g2">
-      <div class="field"><label for="g-type">Altın türü</label><select class="select" id="g-type"></select></div>
-      <div class="field"><label for="g-qty">Adet ya da gram</label><input class="input num" id="g-qty" type="text" inputmode="decimal" value="1"></div>
+  <div class="au-top">
+    <div class="b au-hero">
+      <div class="b-head"><span>Gram altın · satış</span><span id="au-spread" class="num">&nbsp;</span></div>
+      <div class="b-big num" id="au-gra">{SK}</div>
+      <p class="b-sub num" id="au-gra-sub">&nbsp;</p>
+      <dl class="au-facts">
+        <div><dt>Alış</dt><dd class="num" id="au-buy">–</dd></div>
+        <div><dt>Gram, dolar ile</dt><dd class="num" id="au-usd">–</dd></div>
+        <div><dt>Ons karşılığı</dt><dd class="num" id="au-ons">–</dd></div>
+        <div><dt>Gümüş / gram</dt><dd class="num" id="au-ag">–</dd></div>
+      </dl>
+      <p class="b-foot">Ons karşılığı, gram altın ve dolar kurundan hesaplanır (1 ons = 31,1035 gram).</p>
     </div>
-    <div class="result" id="g-out" aria-live="polite"><b>—</b><span>Fiyatlar yükleniyor…</span></div>
+
+    <div class="b basket" id="basket">
+      <div class="b-head"><span>Altınım ne kadar eder?</span><button class="linkbtn" type="button" id="bk-reset">Sıfırla</button></div>
+      <p class="b-sub" style="margin-top:-6px">Elindeki altınları ekle; bu cihazda saklanır, bir dahaki girişinde hazır olur.</p>
+      <ul class="bk-rows" id="bk-rows"></ul>
+      <button class="btn btn-secondary btn-sm" type="button" id="bk-add">{icon('i-plus')}Altın ekle</button>
+      <div class="bk-total">
+        <div><small>Bozdurursan (alış)</small><b class="num" id="bk-buy">0 ₺</b></div>
+        <div><small>Bugün alsan (satış)</small><b class="num" id="bk-sell">0 ₺</b></div>
+      </div>
+      <p class="b-foot num" id="bk-usd">&nbsp;</p>
+    </div>
   </div>
 
-  <div class="table-wrap"><table>
-    <thead><tr><th>Tür</th><th>Alış</th><th>Satış</th><th>Günlük değişim</th></tr></thead>
-    <tbody id="gold-body"><tr><td colspan="4" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
-  </table></div>
+  <div class="list-head"><h2>Ziynet altınları</h2></div>
+  <div class="au-grid" id="au-coins"></div>
+  <div class="list-head"><h2>Gram ve ayar</h2></div>
+  <div class="au-grid" id="au-gram"></div>
+  <div class="list-head"><h2>Diğer değerli metaller</h2></div>
+  <div class="au-grid" id="au-metal"></div>
 
   <div class="prose">
     <h2>Altın türleri arasındaki fark</h2>
