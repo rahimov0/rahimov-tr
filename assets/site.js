@@ -9,7 +9,7 @@
   var root = document.documentElement;
   var themeBtn = $('#themeBtn');
   if (themeBtn) themeBtn.addEventListener('click', function () {
-    var cur = root.getAttribute('data-theme') || 'dark';
+    var cur = root.getAttribute('data-theme') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     var next = cur === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('theme', next); } catch (e) {}
@@ -87,6 +87,7 @@
     pray: function (c, d) { return 'https://api.aladhan.com/v1/timings/' + d + '?latitude=' + c.lat + '&longitude=' + c.lon + '&method=13'; },
     prayMonth: function (c, y, m) { return 'https://api.aladhan.com/v1/calendar/' + y + '/' + m + '?latitude=' + c.lat + '&longitude=' + c.lon + '&method=13'; },
     crypto: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,dogecoin,cardano,tron,avalanche-2&vs_currencies=usd,try&include_24hr_change=true',
+    rev: function (la, lo) { return 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + la + '&longitude=' + lo + '&localityLanguage=tr'; },
     hol: function (y) { return 'https://date.nager.at/api/v3/PublicHolidays/' + y + '/TR'; }
   };
 
@@ -120,17 +121,26 @@
       });
       document.addEventListener('click', function (e) { if (!e.target.closest('.citybar')) box.hidden = true; });
     }
+    function locate(done, fail2) {
+      navigator.geolocation.getCurrentPosition(function (p) {
+        var la = +p.coords.latitude.toFixed(3), lo = +p.coords.longitude.toFixed(3);
+        getJSON(API.rev(la, lo), 86400).then(function (j) { return j.city || j.locality || j.principalSubdivision || 'Konumun'; }, function () { return 'Konumun'; })
+          .then(function (n) { pick({ name: n, lat: la, lon: lo }); if (done) done(); });
+      }, function () { if (fail2) fail2(); }, { timeout: 10000, maximumAge: 3600000 });
+    }
     if (geoBtn) {
       if (!navigator.geolocation) geoBtn.hidden = true;
       geoBtn.addEventListener('click', function () {
         geoBtn.disabled = true;
-        navigator.geolocation.getCurrentPosition(function (p) {
-          geoBtn.disabled = false;
-          pick({ name: 'Konumum', lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3) });
-        }, function () { geoBtn.disabled = false; geoBtn.textContent = 'Konum alınamadı'; }, { timeout: 8000 });
+        locate(function () { geoBtn.disabled = false; }, function () { geoBtn.disabled = false; geoBtn.textContent = 'Konum izni verilmedi'; });
       });
     }
     onChange(getCity());
+    /* İlk ziyarette bir kez konum iste; reddedilirse İstanbul kalır */
+    if (!load('rahimov.city') && !load('rahimov.geoAsked') && navigator.geolocation) {
+      save('rahimov.geoAsked', 1);
+      locate();
+    }
   }
 
   /* ---------- Hava durumu kodları ---------- */
@@ -191,13 +201,21 @@
 
   /* ---------- Ana sayfa ---------- */
   function home() {
-    function panel(j) {
-      [['USD', 4], ['EUR', 4], ['GBP', 4], ['GRA', 2], ['CEYREKALTIN', 2], ['GUMUS', 2]].forEach(function (i) {
-        var x = j[i[0]]; if (!x || typeof x.Selling !== 'number') return;
-        setText('#c-' + i[0], nf(x.Selling, i[1]) + ' ₺');
-        setHTML('#c-' + i[0] + '-c', chg(x.Change));
-      });
-      var n = new Date(); setText('#c-time', pad(n.getHours()) + ':' + pad(n.getMinutes()));
+    var now0 = new Date(), h0 = now0.getHours();
+    setText('#greet', h0 >= 5 && h0 < 11 ? 'Günaydın.' : h0 < 17 && h0 >= 11 ? 'İyi günler.' : h0 >= 17 && h0 < 22 ? 'İyi akşamlar.' : 'İyi geceler.');
+    setText('#today-date', trDate(now0) + ', ' + DAYS[now0.getDay()]);
+
+    function fin() {
+      getJSON(API.fin, 110).then(function (j) {
+        var u = j.USD;
+        if (u) { setText('#t-usd', nf(u.Selling, 4) + ' ₺'); setHTML('#t-usd-sub', chg(u.Change) + ' <span class="muted">· alış ' + nf(u.Buying, 4) + ' ₺</span>'); }
+        [['EUR', 4], ['GBP', 4], ['GRA', 2], ['CEYREKALTIN', 2]].forEach(function (i) {
+          var x = j[i[0]]; if (!x || typeof x.Selling !== 'number') return;
+          setText('#c-' + i[0], nf(x.Selling, i[1]) + ' ₺');
+          setHTML('#c-' + i[0] + '-c', chg(x.Change));
+        });
+        setText('#fx-time', stamp(j.Update_Date));
+      }).catch(function () { setText('#t-usd', '—'); setText('#t-usd-sub', 'Veri alınamadı'); });
     }
     function spark() {
       var svg = $('#spark'); if (!svg) return;
@@ -207,40 +225,93 @@
         var keys = Object.keys(j.rates || {}).sort(), v = keys.map(function (k) { return j.rates[k].TRY; }).filter(Boolean);
         if (v.length < 2) return;
         var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
-        var pts = v.map(function (y, i) { return [i / (v.length - 1) * 300, 58 - (y - mn) / sp * 52]; });
+        var pts = v.map(function (y, i) { return [i / (v.length - 1) * 300, 64 - (y - mn) / sp * 56]; });
         var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join('');
-        svg.innerHTML = '<path class="area" d="' + line + 'L300 64L0 64Z"/><path class="line" d="' + line + '"/>';
+        svg.innerHTML = '<path class="area" d="' + line + 'L300 70L0 70Z"/><path class="line" d="' + line + '"/>';
         var ch = (v[v.length - 1] / v[0] - 1) * 100;
-        setHTML('#spark-range', nf(mn, 2) + ' – ' + nf(mx, 2) + ' · ' + (ch >= 0 ? '+' : '') + nf(ch, 1) + '%');
+        setText('#spark-range', nf(mn, 2) + ' – ' + nf(mx, 2) + ' ₺ · ' + (ch >= 0 ? '+' : '−') + nf(Math.abs(ch), 1) + '%');
       }).catch(function () {});
     }
-    function fin() {
-      getJSON(API.fin, 110).then(function (j) {
-        panel(j);
-        [['USD', '#t-usd', 4], ['EUR', '#t-eur', 4], ['GRA', '#t-gold', 2]].forEach(function (i) {
-          var x = j[i[0]]; if (!x) return;
-          setText(i[1], nf(x.Selling, i[2]) + ' ₺');
-          setHTML(i[1] + '-sub', chg(x.Change) + ' · alış ' + nf(x.Buying, i[2]));
-        });
-      }).catch(function () { ['#t-usd', '#t-eur', '#t-gold'].forEach(function (s) { setText(s, '—'); setText(s + '-sub', 'Veri alınamadı'); }); });
-    }
-    function weather() {
-      var c = getCity();
+    function weather(c) {
       getJSON(API.wx(c), 900).then(function (j) {
         var w = wx(j.current.weather_code, j.current.is_day);
+        setHTML('#wx-ic', wxIcon(w[1]));
         setText('#t-wx', Math.round(j.current.temperature_2m) + '°');
-        setText('#t-wx-label', c.name);
-        setText('#t-wx-sub', w[0] + ' · ' + Math.round(j.daily.temperature_2m_min[0]) + '° / ' + Math.round(j.daily.temperature_2m_max[0]) + '°');
+        setText('#t-wx-sub', w[0] + ' · en düşük ' + Math.round(j.daily.temperature_2m_min[0]) + '°, en yüksek ' + Math.round(j.daily.temperature_2m_max[0]) + '°');
+        var H = j.hourly, cur = String(j.current.time || '').slice(0, 13), i0 = 0;
+        for (var i = 0; i < H.time.length; i++) { if (H.time[i].slice(0, 13) >= cur) { i0 = i; break; } }
+        var out = '';
+        for (var k = i0 + 1; k < Math.min(i0 + 7, H.time.length); k++) {
+          var hh = +H.time[k].slice(11, 13), ww = wx(H.weather_code[k], hh >= 7 && hh < 18 ? 1 : 0);
+          out += '<div><small>' + H.time[k].slice(11, 16) + '</small>' + wxIcon(ww[1]) + Math.round(H.temperature_2m[k]) + '°</div>';
+        }
+        setHTML('#wx-strip', out);
       }).catch(function () { setText('#t-wx', '—'); setText('#t-wx-sub', 'Veri alınamadı'); });
     }
-    function quakes() {
-      var el = $('#home-quakes'); if (!el) return;
-      getJSON(API.quake, 110).then(function (j) {
-        el.innerHTML = quakeRows((j.result || []).slice(0, 5));
-      }).catch(function () { fail(el.closest('.table-wrap'), quakes); });
+    var prayTick, PHASE = ['yatsi', 'imsak', 'gunes', 'ogle', 'ikindi', 'aksam'];
+    function dstr(d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear(); }
+    function prayer(c) {
+      clearInterval(prayTick);
+      var today = new Date(), tom = new Date(); tom.setDate(tom.getDate() + 1);
+      Promise.all([getJSON(API.pray(c, dstr(today)), 3600), getJSON(API.pray(c, dstr(tom)), 3600).catch(function () { return null; })]).then(function (r) {
+        var t = r[0].data.timings, t2 = r[1] && r[1].data.timings;
+        function mins(s) { var a = s.slice(0, 5).split(':'); return +a[0] * 60 + +a[1]; }
+        function draw() {
+          var n = new Date(), sec = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds(), next = -1, target;
+          PR.forEach(function (p, i) { if (next < 0 && mins(t[p[0]]) * 60 > sec) next = i; });
+          if (next >= 0) target = mins(t[PR[next][0]]) * 60;
+          else if (t2) { next = 0; target = 86400 + mins(t2.Imsak) * 60; }
+          else { setText('#pray-count', '—'); return; }
+          var left = target - sec;
+          setText('#pray-next-name', PR[next][1] + ' vaktine kalan');
+          setText('#pray-count', pad(Math.floor(left / 3600)) + ':' + pad(Math.floor(left % 3600 / 60)) + ':' + pad(left % 60));
+          var tile = $('#pray-tile'); if (tile) tile.setAttribute('data-phase', PHASE[next]);
+          setHTML('#pray-mini', PR.map(function (p, i) { return '<div' + (i === next ? ' class="is-next"' : '') + '>' + p[1] + '<b>' + t[p[0]].slice(0, 5) + '</b></div>'; }).join(''));
+        }
+        draw(); prayTick = setInterval(draw, 1000);
+      }).catch(function () { setText('#pray-count', '—'); setText('#pray-next-name', 'Vakitler alınamadı'); });
     }
-    fin(); weather(); quakes(); spark();
-    setInterval(function () { fin(); quakes(); }, 120000);
+    function ago(s) {
+      var d = new Date(String(s).replace(' ', 'T')), m = Math.round((Date.now() - d) / 60000);
+      if (isNaN(m)) return '';
+      return m < 1 ? 'az önce' : m < 60 ? m + ' dk önce' : m < 1440 ? Math.floor(m / 60) + ' sa önce' : Math.floor(m / 1440) + ' gün önce';
+    }
+    function quakes() {
+      getJSON(API.quake, 110).then(function (j) {
+        var L = j.result || [], q = L[0]; if (!q) return;
+        var m = +q.mag, el = $('#qk-mag');
+        el.textContent = nf(m, 1); el.className = 'qk-mag ' + (m >= 5 ? 'm5' : m >= 4 ? 'm4' : m >= 3 ? 'm3' : '');
+        setText('#qk-place', q.title || '');
+        setText('#qk-time', ago(q.date_time) + ' · ' + nf(+q.depth, 1) + ' km derinlik');
+        setHTML('#qk-list', L.slice(1, 4).map(function (e) { return '<li><span>' + esc(e.title || '') + '</span><b>' + nf(+e.mag, 1) + '</b></li>'; }).join(''));
+      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); });
+    }
+    function coin() {
+      getJSON(API.crypto, 110).then(function (j) {
+        var b = j.bitcoin; if (!b) return;
+        setText('#btc', nf(b.try, 0) + ' ₺');
+        setHTML('#btc-sub', chg(b.usd_24h_change) + ' <span class="muted">· ' + nf(b.usd, 0) + ' $</span>');
+      }).catch(function () { setText('#btc', '—'); });
+    }
+    function holiday() {
+      var y = new Date().getFullYear();
+      Promise.all([getJSON(API.hol(y), 86400), getJSON(API.hol(y + 1), 86400).catch(function () { return []; })]).then(function (r) {
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+        var nx = r[0].concat(r[1]).map(function (h) { var d = new Date(h.date + 'T00:00:00'); return { d: d, name: h.localName, left: Math.round((d - today) / 864e5) }; })
+          .filter(function (h) { return h.left >= 0; })[0];
+        if (!nx) return;
+        setText('#hol-left', nx.left === 0 ? 'Bugün' : nx.left + ' gün');
+        setText('#hol-name', nx.name + ' · ' + nx.d.getDate() + ' ' + MONTHS[nx.d.getMonth()]);
+      }).catch(function () { setText('#hol-left', '—'); });
+    }
+    initCity(function (c) {
+      ['#city-name', '#wx-city', '#pray-city'].forEach(function (s) { setText(s, c.name); });
+      var cp = $('#citypop'); if (cp) cp.open = false;
+      weather(c); prayer(c);
+    });
+    fin(); spark(); quakes(); coin(); holiday();
+    setInterval(function () { fin(); quakes(); coin(); }, 120000);
+    setInterval(function () { weather(getCity()); }, 900000);
   }
 
   /* ---------- Döviz ---------- */

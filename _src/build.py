@@ -30,6 +30,8 @@ TOOLS = [
     ("tatil", "/resmi-tatiller/", "i-cal", "Resmî tatiller", "Bu yılın ve gelecek yılın resmî tatil günleri, bir sonraki tatile kalan gün."),
 ]
 
+TONE = {'doviz': 'fx', 'altin': 'coin', 'hava': 'wx', 'deprem': 'quake', 'namaz': 'pray', 'kripto': 'coin', 'tatil': 'hol'}
+
 NAV = [("/araclar/", "Araçlar", "araclar"), ("/doviz/", "Döviz", "doviz"), ("/altin/", "Altın", "altin"),
        ("/hava-durumu/", "Hava durumu", "hava"), ("/deprem/", "Deprem", "deprem"), ("/projeler/", "Projeler", "projeler")]
 
@@ -64,7 +66,8 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <meta property="og:url" content="{SITE}{path}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta name="theme-color" content="#05070B">
+<meta name="theme-color" content="#F2EFE8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/icons/icon-192.png" sizes="192x192">
 <link rel="icon" href="{FAVICON}" type="image/svg+xml">
@@ -76,7 +79,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <script>(function(){{try{{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}}catch(e){{}}}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v={TODAY}b">
 </head>
 <body data-page="{page}">
@@ -143,7 +146,7 @@ def page_head(h1, lead, extra=""):
 
 def tool_cards(exclude=None):
     return "".join(
-        f'<a class="card tool" href="{t[1]}"><span class="tool-ic">{icon(t[2])}</span><div><h3>{t[3]}</h3><p>{t[4]}</p></div></a>'
+        f'<a class="card tool" data-tone="{TONE.get(t[0], "")}" href="{t[1]}"><span class="tool-ic">{icon(t[2])}</span><div><h3>{t[3]}</h3><p>{t[4]}</p></div></a>'
         for t in TOOLS if t[0] != exclude)
 
 
@@ -207,56 +210,91 @@ PAGES = {}
 PAGES["/"] = dict(page="home", title="Rahimov — Döviz, altın, hava durumu, deprem ve tarayıcı oyunları",
     desc="Canlı döviz ve altın fiyatları, hava durumu, son depremler, namaz vakitleri gibi ücretsiz günlük araçlar ve tarayıcıda oynanan oyunlar tek adreste.",
     body=f"""
-<section class="hero"><div class="wrap hero-grid">
-  <div>
-    <p class="eyebrow"><span class="dot"></span>Canlı veri · ücretsiz · kayıt yok</p>
-    <h1>Günlük verin <span class="hl">tek ekranda.</span></h1>
-    <p class="lead">Dolar kaç lira, yarın yağmur var mı, az önceki deprem neredeydi? Döviz, altın, hava, deprem ve namaz vakitleri tek sayfada, telefonda da hızlı. Yanında tarayıcıda oynayabileceğin oyunlar var.</p>
-    <div class="hero-actions"><a href="/araclar/" class="btn btn-primary">Araçları aç {icon('i-arrow')}</a><a href="/projeler/" class="btn btn-secondary">{icon('i-game')}Oyunlar ve projeler</a></div>
-    <div class="stats"><div><b>7</b><span>canlı araç</span></div><div><b>9</b><span>proje</span></div><div><b>2 dk</b><span>yenileme</span></div><div><b>0</b><span>üyelik</span></div></div>
-  </div>
-  <aside class="console" aria-label="Canlı piyasa paneli">
-    <div class="console-head"><i>Canlı panel</i><span id="c-time">--:--</span></div>
-    <ul class="console-rows">
-      <li><a href="/doviz/"><span class="k">USD / TRY</span><span class="v num" id="c-USD">{SK}</span><span class="c num" id="c-USD-c">&nbsp;</span></a></li>
-      <li><a href="/doviz/"><span class="k">EUR / TRY</span><span class="v num" id="c-EUR">{SK}</span><span class="c num" id="c-EUR-c">&nbsp;</span></a></li>
-      <li><a href="/doviz/"><span class="k">GBP / TRY</span><span class="v num" id="c-GBP">{SK}</span><span class="c num" id="c-GBP-c">&nbsp;</span></a></li>
-      <li><a href="/altin/"><span class="k">Gram altın</span><span class="v num" id="c-GRA">{SK}</span><span class="c num" id="c-GRA-c">&nbsp;</span></a></li>
-      <li><a href="/altin/"><span class="k">Çeyrek altın</span><span class="v num" id="c-CEYREKALTIN">{SK}</span><span class="c num" id="c-CEYREKALTIN-c">&nbsp;</span></a></li>
-      <li><a href="/altin/"><span class="k">Gümüş (gr)</span><span class="v num" id="c-GUMUS">{SK}</span><span class="c num" id="c-GUMUS-c">&nbsp;</span></a></li>
-    </ul>
-    <div class="console-spark"><small><span>USD / TRY · 30 gün</span><span id="spark-range">&nbsp;</span></small>
-      <svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none" role="img" aria-label="Dolar kuru son 30 gün"></svg></div>
-  </aside>
-</div></section>
+<div class="wrap">
+<section class="today" aria-label="Bugün">
+  <div><p class="today-meta"><span id="today-date">&nbsp;</span></p>
+  <h1><span id="greet">Merhaba</span><span class="sr-only"> — döviz, altın, hava durumu, namaz vakitleri ve son depremler</span></h1></div>
+  <details class="citypop" id="citypop">
+    <summary aria-label="Şehri değiştir">{icon('i-pin')}<span id="city-name">İstanbul</span></summary>
+    <div class="citypop-body">{CITYBAR}<p class="muted" style="font-size:13px;line-height:19px">Hava durumu ve namaz vakitleri bu şehre göre gösterilir. Seçimin yalnızca bu cihazda saklanır.</p></div>
+  </details>
+</section>
 
-<section class="section" aria-labelledby="ozet-title"><div class="wrap">
-  <div class="section-head"><div><span class="kicker">01 — Özet</span><h2 id="ozet-title">Şu an</h2><p>Fiyatlar birkaç dakikada bir yenilenir.</p></div></div>
-  <div class="grid g4 keep2">
-    <a class="card tile" href="/doviz/"><span class="tile-label">Dolar (USD)</span><span class="tile-value" id="t-usd">{SK}</span><span class="tile-sub num" id="t-usd-sub">&nbsp;</span></a>
-    <a class="card tile" href="/doviz/"><span class="tile-label">Euro (EUR)</span><span class="tile-value" id="t-eur">{SK}</span><span class="tile-sub num" id="t-eur-sub">&nbsp;</span></a>
-    <a class="card tile" href="/altin/"><span class="tile-label">Gram altın</span><span class="tile-value" id="t-gold">{SK}</span><span class="tile-sub num" id="t-gold-sub">&nbsp;</span></a>
-    <a class="card tile" href="/hava-durumu/"><span class="tile-label"><span id="t-wx-label">Hava durumu</span></span><span class="tile-value" id="t-wx"><span class="skeleton">00°</span></span><span class="tile-sub" id="t-wx-sub">&nbsp;</span></a>
+<section class="bento" aria-label="Günlük panel">
+  <div class="b b-fx">
+    <div class="b-head"><span>Piyasa · dolar</span><a href="/doviz/">Döviz çevirici {icon('i-arrow')}</a></div>
+    <div class="fx-main"><div><div class="b-big" id="t-usd">{SK}</div><p class="b-sub num" id="t-usd-sub">&nbsp;</p></div></div>
+    <div class="fx-list">
+      <a class="fx-item" href="/doviz/"><small>Euro</small><b id="c-EUR">{SK}</b><i id="c-EUR-c">&nbsp;</i></a>
+      <a class="fx-item" href="/doviz/"><small>Sterlin</small><b id="c-GBP">{SK}</b><i id="c-GBP-c">&nbsp;</i></a>
+      <a class="fx-item" href="/altin/"><small>Gram altın</small><b id="c-GRA">{SK}</b><i id="c-GRA-c">&nbsp;</i></a>
+      <a class="fx-item" href="/altin/"><small>Çeyrek altın</small><b id="c-CEYREKALTIN">{SK}</b><i id="c-CEYREKALTIN-c">&nbsp;</i></a>
+    </div>
+    <div class="spark-wrap"><small><span>Dolar, son 30 gün</span><span id="spark-range">&nbsp;</span></small>
+      <svg class="spark" id="spark" viewBox="0 0 300 70" preserveAspectRatio="none" role="img" aria-label="Dolar kuru son 30 gün"></svg></div>
+    <p class="b-foot" id="fx-time">&nbsp;</p>
   </div>
-</div></section>
+
+  <a class="b b-wx" href="/hava-durumu/">
+    <div class="b-head"><span>Hava · <span id="wx-city">İstanbul</span></span><span>7 günlük {icon('i-arrow')}</span></div>
+    <div class="wx-row"><span id="wx-ic"></span><div><div class="b-big" id="t-wx"><span class="skeleton">00°</span></div><p class="b-sub" id="t-wx-sub">&nbsp;</p></div></div>
+    <div class="wx-strip" id="wx-strip"></div>
+  </a>
+
+  <a class="b b-pray" href="/namaz-vakitleri/" id="pray-tile">
+    <span class="arc" aria-hidden="true"></span>
+    <div class="b-head"><span>Namaz · <span id="pray-city">İstanbul</span></span></div>
+    <p class="pray-next-name" id="pray-next-name">Sıradaki vakit</p>
+    <div class="b-big" id="pray-count">--:--:--</div>
+    <div class="pray-mini" id="pray-mini"></div>
+  </a>
+
+  <a class="b b-quake" href="/deprem/">
+    <div class="b-head"><span>Son deprem</span><span>Kandilli {icon('i-arrow')}</span></div>
+    <div class="qk-main"><span class="qk-mag" id="qk-mag">–</span><div><p class="qk-place" id="qk-place">Yükleniyor…</p><p class="b-sub" id="qk-time">&nbsp;</p></div></div>
+    <ul class="qk-list" id="qk-list"></ul>
+  </a>
+
+  <a class="b b-coin" href="/kripto/">
+    <div class="b-head"><span>Bitcoin</span>{icon('i-coin')}</div>
+    <div class="b-mid" id="btc">{SK}</div><p class="b-sub" id="btc-sub">&nbsp;</p>
+  </a>
+
+  <a class="b b-hol" href="/resmi-tatiller/">
+    <div class="b-head"><span>Sıradaki tatil</span>{icon('i-cal')}</div>
+    <div class="b-mid" id="hol-left">{SK}</div><p class="b-sub" id="hol-name">&nbsp;</p>
+  </a>
+
+  <div class="b b-game">
+    <div class="b-head"><span>Mola ver</span><a href="/projeler/">Tüm projeler {icon('i-arrow')}</a></div>
+    <p>İndirmeden, tarayıcıda açılan oyunlar.</p>
+    <div class="game-row">
+      <a href="https://abyss-diver.rahimov.tr/" target="_blank" rel="noopener"><img class="logo pixel" src="/logos/abyss-diver.png" alt="" width="34" height="34">Abyss Diver</a>
+      <a href="https://lexirace.rahimov.tr/" target="_blank" rel="noopener"><img class="logo" src="/logos/lexirace.png" alt="" width="34" height="34">LexiRace</a>
+      <a href="https://spythere.rahimov.tr/" target="_blank" rel="noopener"><img class="logo" src="/logos/spythere.png" alt="" width="34" height="34">Spythere</a>
+    </div>
+  </div>
+</section>
+</div>
+<div class="home-gap"></div>
 
 <section class="section" id="araclar" aria-labelledby="araclar-title"><div class="wrap">
-  <div class="section-head"><div><span class="kicker">02 — Araçlar</span><h2 id="araclar-title">Yedi araç, tek adres</h2><p>Hepsi ücretsiz, üyelik istemez ve telefonda rahat kullanılır.</p></div></div>
+  <div class="section-head"><div><h2 id="araclar-title">Araçlar</h2><p>Hepsi ücretsiz, üyelik istemez ve telefonda rahat kullanılır.</p></div></div>
   <div class="grid g3">{tool_cards()}</div>
 </div></section>
 
 <section class="section" aria-labelledby="deprem-title"><div class="wrap">
-  <div class="section-head"><div><span class="kicker">03 — Deprem</span><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste {icon('i-arrow')}</a></div>
+  <div class="section-head"><div><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste {icon('i-arrow')}</a></div>
   <div class="table-wrap"><table><thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead><tbody id="home-quakes"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody></table></div>
 </div></section>
 
 <section class="section" aria-labelledby="projeler-title"><div class="wrap">
-  <div class="section-head"><div><span class="kicker">04 — Projeler</span><h2 id="projeler-title">Oyunlar ve projeler</h2><p>İndirmeden, tarayıcıda açılan oyunlar ve uygulamalar.</p></div><a class="more" href="/projeler/">Tüm projeler {icon('i-arrow')}</a></div>
+  <div class="section-head"><div><h2 id="projeler-title">Oyunlar ve projeler</h2><p>İndirmeden, tarayıcıda açılan oyunlar ve uygulamalar.</p></div><a class="more" href="/projeler/">Tüm projeler {icon('i-arrow')}</a></div>
   <div class="grid g3">{project_cards(6)}</div>
 </div></section>
 
 <section class="section"><div class="wrap">
-  <div class="section-head"><div><span class="kicker">05 — SSS</span><h2>Sık sorulan sorular</h2></div></div>
+  <div class="section-head"><div><h2>Sık sorulan sorular</h2></div></div>
   {faq([
     ("Bu site ne işe yarıyor?", "Gün içinde sık sık baktığın bilgileri tek yerde topluyor: döviz ve altın fiyatları, hava durumu, son depremler, namaz vakitleri, kripto para fiyatları ve resmî tatiller. Ayrıca Kanan Rahimov'un geliştirdiği tarayıcı oyunlarına ve uygulamalara buradan ulaşabilirsin."),
     ("Veriler nereden geliyor?", "Her aracın sayfasında kaynağı yazıyor. Döviz ve altın için Truncgil Finans ve Frankfurter, hava durumu için Open-Meteo, depremler için Kandilli Rasathanesi verisi, namaz vakitleri için Aladhan, kripto için CoinGecko, tatiller için Nager.Date kullanılıyor."),
@@ -772,7 +810,7 @@ import json as _json
 open("manifest.webmanifest","w",encoding="utf-8").write(_json.dumps({
   "name":"Rahimov — Günlük araçlar ve oyunlar","short_name":"Rahimov","lang":"tr",
   "start_url":"/","scope":"/","display":"standalone",
-  "background_color":"#05070B","theme_color":"#05070B",
+  "background_color":"#F2EFE8","theme_color":"#121110",
   "icons":[
     {"src":"/icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
     {"src":"/icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},

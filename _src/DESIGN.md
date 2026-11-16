@@ -1,23 +1,20 @@
-# rahimov.tr — tasarım sistemi (v2, fütüristik)
+# rahimov.tr — tasarım sistemi (v3, bento)
 
-Yön: koyu varsayılan, ızgara + yumuşak parıltı zemin, camsı yüzeyler, mono etiketler. Açık tema isteğe bağlı (`data-theme="light"`).
+Yön: kişisel günlük panel. Telefon widget'ları gibi farklı boyut ve renkte kutular; sıcak kâğıt zemin, parıltı/cam/ızgara yok. Tema sistem ayarını izler, sağ üstten elle değişir.
 
-## Renk (roller)
-- bg #05070B · surface beyaz %3.5 · surface-2 beyaz %6.5 · border beyaz %9
-- text #EEF3F8 · text-2 #A7B3C2 · text-3 #8392A5
-- accent (birincil: düğme, vurgu, bağlantı) #22D3EE · accent-2 (logo noktası, sıcak vurgu) #FB923C
-- up #34D399 · down #FB7185
-- Açık tema: bg #F3F6FA, accent #0E7490
+## Renk (rol)
+- bg #F2EFE8 / koyu #121110 · surface #FFF / #1C1B19 · çizgi #E3DDD1 / #2F2D29
+- text #1B1A17 / #F2EEE6 · text-2 #57524A / #B5AFA4
+- accent (bağlantı, rozet) #C2410C / #FB8A4A · up #1D7A48 · down #C0352E
+- Kutu tonları: piyasa adaçayı (t-fx), hava gök (t-wx), deprem kiremit (t-quake), kripto kum (t-coin), tatil lavanta (t-hol), oyun ters renk
+- Namaz kutusu vakte göre gökyüzü gradyanı alır (imsak, güneş, öğle, ikindi, akşam, yatsı)
 
 ## Yazı
-- Başlık: Space Grotesk 700, sıkı iz (-0.03em)
-- Gövde: Geist 400/500/600
-- Etiket/sayı: JetBrains Mono (kicker, tablo başlığı, şerit, panel). Gradyanlı yazı yok.
+- Başlık ve büyük sayılar: Bricolage Grotesque 700
+- Gövde: Manrope 400–800. Mono yazı ve büyük harf etiket kullanılmaz.
 
-## Şekil ve derinlik
-- Radius 8 / 12 / 18 / panel 20. Gölge yerine ince parıltı (`--glow`) yalnızca hover ve panelde.
+## Şekil
+- Radius 10 / 14 / 22, düğme ve çip tam yuvarlak. Gölge çok hafif; hover'da kalkma gölgesi.
 
-## Bileşenler
-- Kayan şerit (marquee): sonsuz, ~55 px/sn, hover'da durur, reduced-motion'da kaydırılabilir liste.
-- Canlı panel (hero): 6 fiyat + 30 günlük USD/TRY çizgisi.
-- Kartlar camsı, hover'da accent çerçeve. Bölüm başlıklarında mono "01 — ÖZET" etiketi.
+## Bento ızgara
+- 4 sütun: "fx fx wx wx / fx fx pray quake / coin hol game game"; 2 sütun tablette; mobilde tek sütun (kripto + tatil yan yana).
