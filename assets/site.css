@@ -630,3 +630,8 @@ footer { border-top: 1px solid var(--line); padding: 48px 0 56px; margin-top: 8p
   *, *::before, *::after { transition: none !important; animation: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* iOS uygulaması içinde: alt sekme çubuğu menünün işini görür */
+.in-app header.nav{display:none}
+.in-app body{padding-top:env(safe-area-inset-top)}
+.in-app ins.adsbygoogle{display:none!important}

@@ -95,7 +95,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <meta name="apple-mobile-web-app-title" content="Rahimov">
 <meta name="mobile-web-app-capable" content="yes">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6811894230993861" crossorigin="anonymous"></script>
-<script>(function(){{var r=document.documentElement,t='auto';try{{localStorage.removeItem('theme');t=localStorage.getItem('rahimov.theme')||'auto';}}catch(e){{}}r.setAttribute('data-mode',t);if(t==='light'||t==='dark')r.setAttribute('data-theme',t);}})();</script>
+<script>(function(){{var r=document.documentElement,t='auto';try{{localStorage.removeItem('theme');t=localStorage.getItem('rahimov.theme')||'auto';}}catch(e){{}}r.setAttribute('data-mode',t);if(/RahimovApp/.test(navigator.userAgent))r.classList.add('in-app');if(t==='light'||t==='dark')r.setAttribute('data-theme',t);}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
