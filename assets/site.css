@@ -94,6 +94,14 @@ img.logo { object-fit: cover; }
 :root[data-mode="auto"] .theme-btn .auto, :root:not([data-mode]) .theme-btn .auto { display: block; }
 :root[data-mode="light"] .theme-btn .sun { display: block; }
 :root[data-mode="dark"] .theme-btn .moon { display: block; }
+.langsw { position: relative; flex: none; }
+.langsw > summary { list-style: none; cursor: pointer; font: 800 12px/1 var(--font-body); letter-spacing: .04em; }
+.langsw > summary::-webkit-details-marker { display: none; }
+.langsw-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 170px; padding: 6px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow-lift); display: flex; flex-direction: column; }
+.langsw-menu a { padding: 10px 12px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; color: var(--text-2); }
+.langsw-menu a:hover { background: var(--sunken); color: var(--text); }
+.langsw-menu a[aria-current] { color: var(--text); background: var(--sunken); }
+.langsw-menu a[aria-current]::after { content: " ✓"; color: var(--accent); }
 .menu-btn { display: none; }
 @media (max-width: 1000px) {
   .menu-btn { display: grid; }

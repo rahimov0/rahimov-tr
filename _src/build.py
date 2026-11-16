@@ -10,6 +10,7 @@ def _ver(f):
     return _h.md5(open(f, "rb").read()).hexdigest()[:8]
 CSSV = _ver("assets/site.css")
 JSV = _ver("assets/site.js")
+I18V = _ver("assets/i18n.js")
 SPRITE = open(os.path.join(ROOT, "_src", "sprite.html"), encoding="utf-8").read()
 
 ICONS = """
@@ -71,6 +72,12 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{SITE}{path}">
+<link rel="alternate" hreflang="tr" href="{SITE}{path}">
+<link rel="alternate" hreflang="en" href="{SITE}/en{path}">
+<link rel="alternate" hreflang="ru" href="{SITE}/ru{path}">
+<link rel="alternate" hreflang="az" href="{SITE}/az{path}">
+<link rel="alternate" hreflang="x-default" href="{SITE}{path}">
+<script>(function(){{var d=document.documentElement,c=d.lang,L=['tr','en','ru','az'];if(c!=='tr'||/bot|crawl|spider|google|mediapartners|lighthouse|headless/i.test(navigator.userAgent))return;var s=null;try{{s=localStorage.getItem('rahimov.lang');}}catch(e){{}}var w=s;if(!w){{var n=navigator.languages||[navigator.language||'tr'];for(var i=0;i<n.length;i++){{var x=String(n[i]).slice(0,2).toLowerCase();if(L.indexOf(x)>-1){{w=x;break;}}}}if(!w)w='en';}}if(w&&w!=='tr'&&L.indexOf(w)>-1)location.replace('/'+w+location.pathname+location.search+location.hash);}})();</script>
 {robots}
 <meta name="google-adsense-account" content="ca-pub-6811894230993861">
 <meta property="og:type" content="website">
@@ -101,6 +108,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
   <div class="wrap">
     <a href="/" class="brand" aria-label="Rahimov ana sayfa"><svg class="logo" width="32" height="32" style="border-radius:8px"><use href="#logo-brand"/></svg>Rahimov</a>
     <nav class="nav-links" id="navLinks" aria-label="Ana menü">{nav}</nav>
+    <details class="langsw" translate="no"><summary class="icon-btn" aria-label="Dil / Language"><span id="langCur">TR</span></summary><div class="langsw-menu"><a data-noloc data-lang="tr" hreflang="tr" lang="tr" href="{path}">Türkçe</a><a data-noloc data-lang="en" hreflang="en" lang="en" href="/en{path}">English</a><a data-noloc data-lang="ru" hreflang="ru" lang="ru" href="/ru{path}">Русский</a><a data-noloc data-lang="az" hreflang="az" lang="az" href="/az{path}">Azərbaycanca</a></div></details>
     <button class="icon-btn theme-btn" type="button" id="themeBtn" aria-label="Tema: otomatik (telefon ayarı)" title="Tema: otomatik"><svg class="icon auto"><use href="#i-auto"/></svg><svg class="icon sun"><use href="#i-sun"/></svg><svg class="icon moon"><use href="#i-moon"/></svg></button>
     <button class="icon-btn menu-btn" type="button" id="menuBtn" aria-label="Menü" aria-expanded="false" aria-controls="navLinks">{icon('i-menu')}</button>
   </div>
@@ -136,6 +144,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
     <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Buradaki fiyat, hava, deprem ve vakit bilgileri üçüncü taraf kaynaklardan alınır, bilgilendirme amaçlıdır ve gecikmeli olabilir. Yatırım tavsiyesi değildir.</p>
   </div>
 </footer>
+<script src="/assets/i18n.js?v={I18V}" defer></script>
 <script src="/assets/site.js?v={JSV}" defer></script>
 <script>(function(){{var E=[];window.addEventListener('error',function(e){{E.push((e.message||'hata')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:''));}});
 window.addEventListener('load',function(){{setTimeout(function(){{if(!document.querySelector('.skeleton'))return;var d=document.createElement('div');
@@ -329,7 +338,7 @@ PAGES["/araclar/"] = dict(page="araclar", title="Ücretsiz günlük araçlar —
   <p>Fiyat sayfaları (döviz, altın, kripto) açık kaldığı sürece iki dakikada bir kendini yeniler. Deprem listesi de aynı aralıkla güncellenir. Kaynaklardan biri geçici olarak yanıt vermezse sayfada bunu söyleyen bir uyarı ve “Tekrar dene” düğmesi görürsün.</p>
   <h2>Kaynaklar</h2>
   <ul>
-    <li><strong>Döviz ve altın:</strong> Truncgil Finans (serbest piyasa alış–satış fiyatları) ve Frankfurter (merkez bankası referans kurları, grafik için).</li>
+    <li><strong>Döviz ve altın:</strong> Truncgil Finans (serbest piyasa alış–satış fiyatları), Frankfurter (merkez bankası referans kurları, grafik için) ve jsDelivr üzerindeki açık döviz arşivi (diğer para birimlerinin grafiği).</li>
     <li><strong>Hava durumu:</strong> Open-Meteo; ulusal meteoroloji kurumlarının sayısal hava tahmin modellerini kullanır.</li>
     <li><strong>Depremler:</strong> Boğaziçi Üniversitesi Kandilli Rasathanesi'nin yayımladığı liste.</li>
     <li><strong>Namaz vakitleri:</strong> Aladhan; Diyanet İşleri Başkanlığı'nın hesaplama yöntemi seçili.</li>
@@ -410,7 +419,7 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
     ("Kurlar ne sıklıkla güncelleniyor?", "Tablo, sayfa açık kaldığı sürece iki dakikada bir yenilenir. Kaynağın son güncelleme saati sayfanın üstünde yazar. Hafta sonu piyasalar kapalı olduğu için fiyatlar çok az değişir."),
     ("Günlük değişim neye göre hesaplanıyor?", "Yüzde değişim, bir önceki günün kapanış fiyatına göre bugünkü farkı gösterir. Yeşil yukarı ok artışı, kırmızı aşağı ok düşüşü ifade eder."),
     ("Bu fiyatlarla işlem yapabilir miyim?", "Hayır. Bu sayfa yalnızca bilgi verir; alım satım yapılmaz. İşlem yapacağın bankanın ya da döviz bürosunun güncel fiyatını esas al."),
-    ("Veri kaynağı nedir?", "Alış–satış fiyatları Truncgil Finans'tan, grafik verisi Frankfurter'in derlediği merkez bankası referans kurlarından alınır."),
+    ("Veri kaynağı nedir?", "Alış–satış fiyatları Truncgil Finans'tan, grafik verisi Frankfurter'in derlediği merkez bankası referans kurlarından ve jsDelivr üzerindeki açık döviz arşivinden alınır."),
   ])}
   <p class="note" style="max-width:760px">Bu sayfadaki bilgiler yatırım tavsiyesi değildir. Fiyatlar gecikmeli olabilir.</p>
 </div></section>""" + other_tools("doviz"))
@@ -794,14 +803,14 @@ PAGES["/iletisim/"] = dict(page="iletisim", title="İletişim — Rahimov",
 PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahimov",
     desc="rahimov.tr ve alt alan adlarındaki projeler için gizlilik politikası, çerezler, konum izni ve Google AdSense reklamları hakkında bilgi.",
     crumbs=[(None, "Gizlilik Politikası")],
-    body=page_head("Gizlilik Politikası", "Son güncelleme: 12 Kasım 2026") + """
+    body=page_head("Gizlilik Politikası", "Son güncelleme: 16 Kasım 2026") + """
 <section class="section"><div class="wrap"><div class="prose">
   <p>Bu sayfa, <strong>rahimov.tr</strong> ve alt alan adlarında (ör. lexirace.rahimov.tr, spythere.rahimov.tr, abyss-diver.rahimov.tr) yayınlanan araç ve projelerde hangi bilgilerin işlendiğini açıklar. Siteyi kullanarak bu politikayı kabul etmiş olursun.</p>
   <h2>Toplanan bilgiler</h2>
   <p>Ana siteyi ve araçları kullanmak için hesap açman ya da kişisel bilgi vermen gerekmez.</p>
   <ul>
-    <li><strong>Cihazda saklanan tercihler:</strong> Tema tercihin ve hava durumu ile namaz vakitleri için seçtiğin şehir, tarayıcının yerel depolamasında (localStorage) tutulur. Bu bilgiler cihazından bu sitenin sunucusuna gönderilmez.</li>
-    <li><strong>Konum:</strong> “Konumumu kullan” düğmesine bastığında tarayıcın izin ister. İzin verirsen yaklaşık koordinatın, yalnızca hava durumu ya da namaz vakti sorgusu yapmak için ilgili veri sağlayıcısına gönderilir. Düğmeye basmadığın sürece konumun istenmez.</li>
+    <li><strong>Cihazda saklanan tercihler:</strong> Tema ve dil tercihin, hava durumu ile namaz vakitleri için seçtiğin şehir, favori döviz kurların ve altın hesabına eklediğin altınlar tarayıcının yerel depolamasında (localStorage) tutulur. Bu bilgiler cihazından bu sitenin sunucusuna gönderilmez.</li>
+    <li><strong>Konum:</strong> İlk ziyaretinde bir kez ve “Konumumu kullan” düğmesine bastığında tarayıcın konum izni ister. İzin verirsen yaklaşık koordinatın yalnızca hava durumu, namaz vakti ve şehir adını bulmak için ilgili veri sağlayıcısına gönderilir. İzin vermezsen İstanbul gösterilir ve izin bir daha istenmez.</li>
     <li><strong>Hesap bilgileri:</strong> LexiRace gibi hesap gerektiren oyunlarda seçtiğin kullanıcı adı ve oyun ilerlemen saklanır. E-posta adresi istenmez.</li>
     <li><strong>Oyun verileri:</strong> Çok oyunculu oyunlarda (ör. Spythere) oda ve oyun durumu, oyun sürdüğü sürece sunucuda tutulur.</li>
     <li><strong>Mikrofon:</strong> LexiRace sesli cevap için tarayıcının konuşma tanıma özelliğini kullanır. Mikrofon izni yalnızca oyun sırasında kullanılır; ses kaydı bu site tarafından saklanmaz.</li>
@@ -809,8 +818,8 @@ PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahi
   <h2>Üçüncü taraf veri sağlayıcıları</h2>
   <p>Araç sayfalarını açtığında tarayıcın, veriyi doğrudan aşağıdaki servislerden ister. Bu sırada her internet isteğinde olduğu gibi IP adresin ilgili servise iletilir. Servisler kendi gizlilik politikalarına tabidir.</p>
   <ul>
-    <li>Truncgil Finans ve Frankfurter (döviz ve altın)</li>
-    <li>Open-Meteo (hava durumu ve şehir araması)</li>
+    <li>Truncgil Finans, Frankfurter ve jsDelivr üzerindeki açık döviz arşivi (döviz ve altın), flagcdn (bayrak görselleri)</li>
+    <li>Open-Meteo (hava durumu ve şehir araması), BigDataCloud (konumdan şehir adını bulma)</li>
     <li>Kandilli Rasathanesi verisini sunan açık deprem servisi (depremler)</li>
     <li>Aladhan (namaz vakitleri)</li>
     <li>CoinGecko (kripto para fiyatları)</li>
@@ -849,13 +858,28 @@ def write(rel, content):
 
 
 def main():
+    import sys, json as _js
+    sys.path.insert(0, os.path.join(ROOT, "_src"))
+    import i18n
+    built = {}
     for path, p in PAGES.items():
         html = layout(path, p["page"], p["title"], p["desc"], p["body"], p.get("crumbs"))
+        built[path] = html
         write((path.strip("/") + "/index.html").lstrip("/"), html)
+    _js.dump(i18n.extract(list(built.values()) + [PAGE_404]), open(os.path.join(ROOT, "_src", "i18n", "strings.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    for lang in i18n.LANGS:
+        cat, missing = i18n.load_cat(ROOT, lang), set()
+        for path, html in built.items():
+            write(lang + "/" + (path.strip("/") + "/index.html").lstrip("/"), i18n.localize(html, lang, cat, missing))
+        if missing:
+            print(lang, "eksik çeviri:", len(missing))
+            open(os.path.join(ROOT, "_src", "i18n", lang + ".missing.txt"), "w", encoding="utf-8").write("\n".join(sorted(missing)))
     write("404.html", PAGE_404)
     write("gizlilik.html", f'<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Gizlilik Politikası — Rahimov</title><link rel="canonical" href="{SITE}/gizlilik/"><meta http-equiv="refresh" content="0; url=/gizlilik/"></head><body><p><a href="/gizlilik/">Gizlilik Politikası</a></p></body></html>')
-    urls = "".join(f"<url><loc>{SITE}{p}</loc><lastmod>{TODAY}</lastmod></url>\n" for p in PAGES)
-    write("sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+    def alts(p):
+        return "".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{SITE}{"" if l == "tr" else "/" + l}{p}"/>' for l in ["tr", "en", "ru", "az"])
+    urls = "".join(f"<url><loc>{SITE}{pre}{p}</loc><lastmod>{TODAY}</lastmod>{alts(p)}</url>\n" for pre in ["", "/en", "/ru", "/az"] for p in PAGES)
+    write("sitemap.xml", f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n{urls}</urlset>\n')
     write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")
     print("ok:", len(PAGES), "sayfa")
 

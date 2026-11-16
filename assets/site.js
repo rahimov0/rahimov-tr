@@ -2,6 +2,15 @@
 (function () {
   'use strict';
   window.__rtr = 1;
+  /* ---------- Dil ---------- */
+  var LANG = (document.documentElement.lang || 'tr').slice(0, 2);
+  var LOC = { tr: 'tr-TR', en: 'en-US', ru: 'ru-RU', az: 'az-Latn-AZ' }[LANG] || 'tr-TR';
+  var NLOC = LANG === 'az' ? 'tr-TR' : LOC;   /* az: 1.234,56 biçimi; bazı tarayıcılarda az verisi eksik */
+  function pc(s) { return LANG === 'tr' ? '%' + s : s + '%'; }
+  var I18N = window.RAHIMOV_I18N || {};
+  function L(s) { var d = I18N[LANG]; return (d && d[s]) || s; }
+  function F(s, o) { s = L(s); for (var k in o) s = s.split('{' + k + '}').join(o[k]); return s; }
+  function lp(href) { return LANG === 'tr' ? href : '/' + LANG + href; }
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
@@ -9,20 +18,22 @@
   var root = document.documentElement;
   var themeBtn = $('#themeBtn');
   /* Tema: otomatik (telefon ayarı) → açık → koyu → otomatik */
-  var TLAB = { auto: 'otomatik (telefon ayarı)', light: 'açık', dark: 'koyu' };
+  var TLAB = { auto: L('otomatik (telefon ayarı)'), light: L('açık'), dark: L('koyu') };
   function setMode(m) {
     root.setAttribute('data-mode', m);
     if (m === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', m);
     try { if (m === 'auto') localStorage.removeItem('rahimov.theme'); else localStorage.setItem('rahimov.theme', m); } catch (e) {}
-    if (themeBtn) { themeBtn.setAttribute('aria-label', 'Tema: ' + TLAB[m]); themeBtn.title = 'Tema: ' + TLAB[m]; }
+    if (themeBtn) { themeBtn.setAttribute('aria-label', L('Tema: ') + TLAB[m]); themeBtn.title = L('Tema: ') + TLAB[m]; }
   }
   if (themeBtn) {
     setMode(root.getAttribute('data-mode') || 'auto');
     themeBtn.addEventListener('click', function () {
       var m = root.getAttribute('data-mode') || 'auto', next = m === 'auto' ? 'light' : m === 'light' ? 'dark' : 'auto';
-      setMode(next); toast('Tema: ' + TLAB[next]);
+      setMode(next); toast(L('Tema: ') + TLAB[next]);
     });
   }
+  $$('.langsw-menu a').forEach(function (a) { a.addEventListener('click', function () { try { localStorage.setItem('rahimov.lang', a.getAttribute('data-lang')); } catch (e) {} }); });
+  document.addEventListener('click', function (e) { var d = $('.langsw[open]'); if (d && !e.target.closest('.langsw')) d.open = false; });
   var menuBtn = $('#menuBtn'), navLinks = $('#navLinks');
   if (menuBtn) menuBtn.addEventListener('click', function () {
     var open = navLinks.classList.toggle('open');
@@ -32,7 +43,7 @@
   /* ---------- Yardımcılar ---------- */
   function nf(n, d) {
     if (d === undefined) d = 2;
-    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+    return new Intl.NumberFormat(NLOC, { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -40,7 +51,7 @@
   function timed(url) {
     return new Promise(function (resolve, reject) {
       var done = false, ctl = window.AbortController ? new AbortController() : null;
-      var tm = setTimeout(function () { if (!done) { done = true; if (ctl) ctl.abort(); reject(new Error('Zaman aşımı (15 sn)')); } }, 15000);
+      var tm = setTimeout(function () { if (!done) { done = true; if (ctl) ctl.abort(); reject(new Error(L('Zaman aşımı (15 sn)'))); } }, 15000);
       fetch(url, ctl ? { cache: 'no-cache', signal: ctl.signal } : { cache: 'no-cache' }).then(function (r) { if (!done) { done = true; clearTimeout(tm); resolve(r); } },
         function (e) { if (!done) { done = true; clearTimeout(tm); reject(e); } });
     });
@@ -81,20 +92,20 @@
     if (!el) return;
     if (el.tagName === 'TBODY') {   /* tabloyu silme; hata satırı göster ki sonraki yenileme tabloyu doldurabilsin */
       var n = el.parentNode.querySelectorAll('thead th').length || 3;
-      el.innerHTML = '<tr><td colspan="' + n + '" style="white-space:normal"><div class="error-box">Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.' + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">Ayrıntı: ' + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-top:8px">Şimdi dene</button></div></td></tr>';
+      el.innerHTML = '<tr><td colspan="' + n + '" style="white-space:normal"><div class="error-box">' + L('Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.') + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">' + L('Ayrıntı: ') + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-top:8px">' + L('Şimdi dene') + '</button></div></td></tr>';
       var bt = $('button', el); if (bt && retry) bt.addEventListener('click', retry);
       return;
     }
-    el.innerHTML = '<div class="error-box">Veri şu an alınamadı. Bağlantını kontrol edip biraz sonra tekrar dene.' + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">Ayrıntı: ' + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-left:8px">Tekrar dene</button></div>';
+    el.innerHTML = '<div class="error-box">' + L('Veri şu an alınamadı. Bağlantını kontrol edip biraz sonra tekrar dene.') + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">' + L('Ayrıntı: ') + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-left:8px">' + L('Tekrar dene') + '</button></div>';
     var b = $('button', el); if (b && retry) b.addEventListener('click', retry);
   }
   function chg(v) {
     if (typeof v !== 'number' || isNaN(v)) return '<span class="muted">—</span>';
     var cls = v > 0 ? 'up' : v < 0 ? 'down' : 'muted';
-    return '<span class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + '%' + nf(Math.abs(v)) + '</span>';
+    return '<span class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + pc(nf(Math.abs(v))) + '</span>';
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function stamp(src, stale) { var n = new Date(); if (stale) { var s = new Date(stale); return 'Bağlantı sorunu: ' + pad(s.getHours()) + ':' + pad(s.getMinutes()) + ' itibarıyla kayıtlı veri gösteriliyor · yeniden deneniyor'; } return 'Kaynak verisi: ' + (src || '—') + ' · Son kontrol: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
+  function stamp(src, stale) { var n = new Date(); if (stale) { var s = new Date(stale); return F('Bağlantı sorunu: {t} itibarıyla kayıtlı veri gösteriliyor · yeniden deneniyor', { t: pad(s.getHours()) + ':' + pad(s.getMinutes()) }); } return L('Kaynak verisi: ') + (src || '—') + L(' · Son kontrol: ') + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
   function setText(sel, t) { var e = $(sel); if (e) { e.textContent = t; e.classList.remove('skeleton'); } }
   function setHTML(sel, t) { var e = $(sel); if (e) { e.innerHTML = t; e.classList.remove('skeleton'); } }
 
@@ -102,17 +113,17 @@
     fin: 'https://finans.truncgil.com/v4/today.json',
     fxSeries: function (base, start) { return 'https://api.frankfurter.dev/v1/' + start + '..?base=' + base + '&symbols=TRY'; },
     wx: function (c) { return 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=7'; },
-    geo: function (q) { return 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=8&language=tr'; },
+    geo: function (q) { return 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=8&language=' + LANG; },
     quake: 'https://api.orhanaydogdu.com.tr/deprem/kandilli/live?limit=100',
     pray: function (c, d) { return 'https://api.aladhan.com/v1/timings/' + d + '?latitude=' + c.lat + '&longitude=' + c.lon + '&method=13'; },
     prayMonth: function (c, y, m) { return 'https://api.aladhan.com/v1/calendar/' + y + '/' + m + '?latitude=' + c.lat + '&longitude=' + c.lon + '&method=13'; },
     crypto: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,dogecoin,cardano,tron,avalanche-2&vs_currencies=usd,try&include_24hr_change=true',
-    rev: function (la, lo) { return 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + la + '&longitude=' + lo + '&localityLanguage=tr'; },
+    rev: function (la, lo) { return 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + la + '&longitude=' + lo + '&localityLanguage=' + LANG; },
     hol: function (y) { return 'https://date.nager.at/api/v3/PublicHolidays/' + y + '/TR'; }
   };
 
   /* ---------- Şehir seçimi (hava + namaz ortak) ---------- */
-  var DEFAULT_CITY = { name: 'İstanbul', lat: 41.0082, lon: 28.9784 };
+  var DEFAULT_CITY = { name: L('İstanbul'), lat: 41.0082, lon: 28.9784 };
   function getCity() { var c = load('rahimov.city'); return c && c.lat ? c : DEFAULT_CITY; }
   function initCity(onChange) {
     var input = $('#cityInput'), box = $('#citySuggest'), geoBtn = $('#geoBtn'), timer;
@@ -128,7 +139,7 @@
         timer = setTimeout(function () {
           getJSON(API.geo(q), 3600).then(function (j) {
             var res = (j.results || []).sort(function (a, b) { return (b.country_code === 'TR') - (a.country_code === 'TR'); }).slice(0, 6);
-            if (!res.length) { box.innerHTML = '<button type="button" disabled>Sonuç bulunamadı</button>'; box.hidden = false; return; }
+            if (!res.length) { box.innerHTML = '<button type="button" disabled>' + L('Sonuç bulunamadı') + '</button>'; box.hidden = false; return; }
             box.innerHTML = res.map(function (r, i) {
               return '<button type="button" data-i="' + i + '">' + esc(r.name) + ' <small>' + esc([r.admin1, r.country].filter(Boolean).join(', ')) + '</small></button>';
             }).join('');
@@ -144,7 +155,7 @@
     function locate(done, fail2) {
       navigator.geolocation.getCurrentPosition(function (p) {
         var la = +p.coords.latitude.toFixed(3), lo = +p.coords.longitude.toFixed(3);
-        getJSON(API.rev(la, lo), 86400).then(function (j) { return j.city || j.locality || j.principalSubdivision || 'Konumun'; }, function () { return 'Konumun'; })
+        getJSON(API.rev(la, lo), 86400).then(function (j) { return j.city || j.locality || j.principalSubdivision || L('Konumun'); }, function () { return L('Konumun'); })
           .then(function (n) { pick({ name: n, lat: la, lon: lo }); if (done) done(); });
       }, function () { if (fail2) fail2(); }, { timeout: 10000, maximumAge: 3600000 });
     }
@@ -152,7 +163,7 @@
       if (!navigator.geolocation) geoBtn.hidden = true;
       geoBtn.addEventListener('click', function () {
         geoBtn.disabled = true;
-        locate(function () { geoBtn.disabled = false; }, function () { geoBtn.disabled = false; geoBtn.textContent = 'Konum izni verilmedi'; });
+        locate(function () { geoBtn.disabled = false; }, function () { geoBtn.disabled = false; geoBtn.textContent = L('Konum izni verilmedi'); });
       });
     }
     onChange(getCity());
@@ -176,40 +187,43 @@
   };
   function wx(code, isDay) {
     var d = isDay === undefined || isDay ? 1 : 0;
-    if (code === 0) return ['Açık', d ? 'sun' : 'moon'];
-    if (code === 1) return ['Az bulutlu', d ? 'partly' : 'moon'];
-    if (code === 2) return ['Parçalı bulutlu', d ? 'partly' : 'cloud'];
-    if (code === 3) return ['Kapalı', 'cloud'];
-    if (code === 45 || code === 48) return ['Sisli', 'fog'];
-    if (code >= 51 && code <= 55) return ['Çisenti', 'rain'];
-    if (code === 56 || code === 57) return ['Dondurucu çisenti', 'rain'];
-    if (code === 61) return ['Hafif yağmur', 'rain'];
-    if (code === 63) return ['Yağmur', 'rain'];
-    if (code === 65) return ['Kuvvetli yağmur', 'rain'];
-    if (code === 66 || code === 67) return ['Dondurucu yağmur', 'rain'];
-    if (code === 71) return ['Hafif kar', 'snow'];
-    if (code === 73) return ['Kar', 'snow'];
-    if (code === 75) return ['Yoğun kar', 'snow'];
-    if (code === 77) return ['Kar taneleri', 'snow'];
-    if (code >= 80 && code <= 82) return ['Sağanak yağış', 'rain'];
-    if (code === 85 || code === 86) return ['Kar sağanağı', 'snow'];
-    if (code === 95) return ['Gök gürültülü fırtına', 'storm'];
-    if (code === 96 || code === 99) return ['Dolulu fırtına', 'storm'];
-    return ['—', 'cloud'];
+    if (code === 0) return [L('Açık'), d ? 'sun' : 'moon'];
+    if (code === 1) return [L('Az bulutlu'), d ? 'partly' : 'moon'];
+    if (code === 2) return [L('Parçalı bulutlu'), d ? 'partly' : 'cloud'];
+    if (code === 3) return [L('Kapalı'), 'cloud'];
+    if (code === 45 || code === 48) return [L('Sisli'), 'fog'];
+    if (code >= 51 && code <= 55) return [L('Çisenti'), 'rain'];
+    if (code === 56 || code === 57) return [L('Dondurucu çisenti'), 'rain'];
+    if (code === 61) return [L('Hafif yağmur'), 'rain'];
+    if (code === 63) return [L('Yağmur'), 'rain'];
+    if (code === 65) return [L('Kuvvetli yağmur'), 'rain'];
+    if (code === 66 || code === 67) return [L('Dondurucu yağmur'), 'rain'];
+    if (code === 71) return [L('Hafif kar'), 'snow'];
+    if (code === 73) return [L('Kar'), 'snow'];
+    if (code === 75) return [L('Yoğun kar'), 'snow'];
+    if (code === 77) return [L('Kar taneleri'), 'snow'];
+    if (code >= 80 && code <= 82) return [L('Sağanak yağış'), 'rain'];
+    if (code === 85 || code === 86) return [L('Kar sağanağı'), 'snow'];
+    if (code === 95) return [L('Gök gürültülü fırtına'), 'storm'];
+    if (code === 96 || code === 99) return [L('Dolulu fırtına'), 'storm'];
+    return [L('—'), 'cloud'];
   }
   function wxIcon(name) { return '<span class="wx-ic" aria-hidden="true">' + WX_ICON[name] + '</span>'; }
-  var DAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-  var MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-  function trDate(d) { return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+  function cap(s) { return s.charAt(0).toLocaleUpperCase(LOC) + s.slice(1); }
+  var DAYS = LANG === 'tr' ? ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'] : LANG === 'az' ? ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'] : [0, 1, 2, 3, 4, 5, 6].map(function (i) { var w = new Date(2026, 10, 15 + i).toLocaleDateString(LOC, { weekday: 'long' }); return LANG === 'ru' ? w : cap(w); });
+  var MONTHS = LANG === 'tr' ? ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'] : LANG === 'az' ? ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avqust', 'sentyabr', 'oktyabr', 'noyabr', 'dekabr'] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (i) { return cap(new Date(2026, i, 1).toLocaleDateString(LOC, { month: 'long' })); });
+  function dm(d) { return LANG === 'tr' || LANG === 'az' ? d.getDate() + ' ' + MONTHS[d.getMonth()] : d.toLocaleDateString(LOC, { day: 'numeric', month: 'long' }); }
+  function holName(h) { return LANG === 'tr' ? h.localName : LANG === 'en' ? h.name : L('tatil:' + h.localName) !== 'tatil:' + h.localName ? L('tatil:' + h.localName) : h.name; }
+  function trDate(d) { return LANG === 'tr' || LANG === 'az' ? d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() : d.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }); }
 
   /* ---------- Üst şerit (her sayfada) ---------- */
   function ticker() {
     var el = $('#ticker'); if (!el) return;
     getJSON(API.fin, 240).then(function (j) {
-      var items = [['USD', 'Dolar', 4], ['EUR', 'Euro', 4], ['GBP', 'Sterlin', 4], ['CHF', 'Frank', 4], ['GRA', 'Gram altın', 2], ['CEYREKALTIN', 'Çeyrek altın', 2], ['YARIMALTIN', 'Yarım altın', 2], ['GUMUS', 'Gümüş', 2]];
+      var items = [['USD', L('Dolar'), 4], ['EUR', L('Euro'), 4], ['GBP', L('Sterlin'), 4], ['CHF', L('Frank'), 4], ['GRA', L('Gram altın'), 2], ['CEYREKALTIN', L('Çeyrek altın'), 2], ['YARIMALTIN', L('Yarım altın'), 2], ['GUMUS', L('Gümüş'), 2]];
       var one = items.filter(function (i) { return j[i[0]] && typeof j[i[0]].Selling === 'number'; }).map(function (i) {
         var x = j[i[0]];
-        return '<a class="tick num" href="' + (i[0].length === 3 && i[0] !== 'GRA' ? '/doviz/' : '/altin/') + '"><span>' + i[1] + '</span><b>' + nf(x.Selling, i[2]) + ' ₺</b>' + chg(x.Change) + '</a>';
+        return '<a class="tick num" href="' + lp(i[0].length === 3 && i[0] !== 'GRA' ? '/doviz/' : '/altin/') + '"><span>' + i[1] + '</span><b>' + nf(x.Selling, i[2]) + ' ₺</b>' + chg(x.Change) + '</a>';
       }).join('');
       if (!one) { el.parentNode.hidden = true; return; }
       var g = '<div class="mgroup">' + one + one + '</div>';
@@ -222,20 +236,20 @@
   /* ---------- Ana sayfa ---------- */
   function home() {
     var now0 = new Date(), h0 = now0.getHours();
-    setText('#greet', h0 >= 5 && h0 < 11 ? 'Günaydın.' : h0 < 17 && h0 >= 11 ? 'İyi günler.' : h0 >= 17 && h0 < 22 ? 'İyi akşamlar.' : 'İyi geceler.');
+    setText('#greet', h0 >= 5 && h0 < 11 ? L('Günaydın.') : h0 < 17 && h0 >= 11 ? L('İyi günler.') : h0 >= 17 && h0 < 22 ? L('İyi akşamlar.') : L('İyi geceler.'));
     setText('#today-date', trDate(now0) + ', ' + DAYS[now0.getDay()]);
 
     function fin() {
       getJSON(API.fin, 110).then(function (j) {
         var u = j.USD;
-        if (u) { setText('#t-usd', nf(u.Selling, 4) + ' ₺'); setHTML('#t-usd-sub', chg(u.Change) + ' <span class="muted">· alış ' + nf(u.Buying, 4) + ' ₺</span>'); }
+        if (u) { setText('#t-usd', nf(u.Selling, 4) + ' ₺'); setHTML('#t-usd-sub', chg(u.Change) + ' <span class="muted">· ' + L('alış') + ' ' + nf(u.Buying, 4) + ' ₺</span>'); }
         [['EUR', 4], ['GBP', 4], ['GRA', 2], ['CEYREKALTIN', 2]].forEach(function (i) {
           var x = j[i[0]]; if (!x || typeof x.Selling !== 'number') return;
           setText('#c-' + i[0], nf(x.Selling, i[1]) + ' ₺');
           setHTML('#c-' + i[0] + '-c', chg(x.Change));
         });
         setText('#fx-time', stamp(j.Update_Date, j.__stale));
-      }).catch(function () { setText('#t-usd', '—'); setText('#t-usd-sub', 'Veri alınamadı'); });
+      }).catch(function () { setText('#t-usd', '—'); setText('#t-usd-sub', L('Veri alınamadı')); });
     }
     function spark() {
       var svg = $('#spark'); if (!svg) return;
@@ -257,7 +271,7 @@
         var w = wx(j.current.weather_code, j.current.is_day);
         setHTML('#wx-ic', wxIcon(w[1]));
         setText('#t-wx', Math.round(j.current.temperature_2m) + '°');
-        setText('#t-wx-sub', w[0] + ' · en düşük ' + Math.round(j.daily.temperature_2m_min[0]) + '°, en yüksek ' + Math.round(j.daily.temperature_2m_max[0]) + '°');
+        setText('#t-wx-sub', w[0] + ' · ' + L('en düşük') + ' ' + Math.round(j.daily.temperature_2m_min[0]) + '°, ' + L('en yüksek') + ' ' + Math.round(j.daily.temperature_2m_max[0]) + '°');
         var H = j.hourly, cur = String(j.current.time || '').slice(0, 13), i0 = 0;
         for (var i = 0; i < H.time.length; i++) { if (H.time[i].slice(0, 13) >= cur) { i0 = i; break; } }
         var out = '';
@@ -266,7 +280,7 @@
           out += '<div><small>' + H.time[k].slice(11, 16) + '</small>' + wxIcon(ww[1]) + Math.round(H.temperature_2m[k]) + '°</div>';
         }
         setHTML('#wx-strip', out);
-      }).catch(function () { setText('#t-wx', '—'); setText('#t-wx-sub', 'Veri alınamadı'); });
+      }).catch(function () { setText('#t-wx', '—'); setText('#t-wx-sub', L('Veri alınamadı')); });
     }
     var prayTick, PHASE = ['yatsi', 'imsak', 'gunes', 'ogle', 'ikindi', 'aksam'];
     function dstr(d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear(); }
@@ -283,18 +297,18 @@
           else if (t2) { next = 0; target = 86400 + mins(t2.Imsak) * 60; }
           else { setText('#pray-count', '—'); return; }
           var left = target - sec;
-          setText('#pray-next-name', PR[next][1] + ' vaktine kalan');
+          setText('#pray-next-name', F('{p} vaktine kalan', { p: L(PR[next][1]) }));
           setText('#pray-count', pad(Math.floor(left / 3600)) + ':' + pad(Math.floor(left % 3600 / 60)) + ':' + pad(left % 60));
           var tile = $('#pray-tile'); if (tile) tile.setAttribute('data-phase', PHASE[next]);
-          setHTML('#pray-mini', PR.map(function (p, i) { return '<div' + (i === next ? ' class="is-next"' : '') + '>' + p[1] + '<b>' + t[p[0]].slice(0, 5) + '</b></div>'; }).join(''));
+          setHTML('#pray-mini', PR.map(function (p, i) { return '<div' + (i === next ? ' class="is-next"' : '') + '>' + L(p[1]) + '<b>' + t[p[0]].slice(0, 5) + '</b></div>'; }).join(''));
         }
         draw(); prayTick = setInterval(draw, 1000);
-      }).catch(function () { setText('#pray-count', '—'); setText('#pray-next-name', 'Vakitler alınamadı'); });
+      }).catch(function () { setText('#pray-count', '—'); setText('#pray-next-name', L('Vakitler alınamadı')); });
     }
     function ago(s) {
       var d = new Date(String(s).replace(' ', 'T')), m = Math.round((Date.now() - d) / 60000);
       if (isNaN(m)) return '';
-      return m < 1 ? 'az önce' : m < 60 ? m + ' dk önce' : m < 1440 ? Math.floor(m / 60) + ' sa önce' : Math.floor(m / 1440) + ' gün önce';
+      return m < 1 ? L('az önce') : m < 60 ? F('{n} dk önce', { n: m }) : m < 1440 ? F('{n} sa önce', { n: Math.floor(m / 60) }) : F('{n} gün önce', { n: Math.floor(m / 1440) });
     }
     function quakes() {
       getJSON(API.quake, 110).then(function (j) {
@@ -302,10 +316,10 @@
         var m = +q.mag, el = $('#qk-mag');
         el.textContent = nf(m, 1); el.className = 'qk-mag ' + (m >= 5 ? 'm5' : m >= 4 ? 'm4' : m >= 3 ? 'm3' : '');
         setText('#qk-place', q.title || '');
-        setText('#qk-time', ago(q.date_time) + ' · ' + nf(+q.depth, 1) + ' km derinlik');
+        setText('#qk-time', ago(q.date_time) + ' · ' + F('{n} km derinlik', { n: nf(+q.depth, 1) }));
         setHTML('#qk-list', L.slice(1, 4).map(function (e) { return '<li><span>' + esc(e.title || '') + '</span><b>' + nf(+e.mag, 1) + '</b></li>'; }).join(''));
         var hq = $('#home-quakes'); if (hq) hq.innerHTML = quakeRows(L.slice(0, 5));
-      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); var hq = $('#home-quakes'); if (hq) fail(hq, quakes); });
+      }).catch(function () { setText('#qk-place', L('Veri alınamadı')); var hq = $('#home-quakes'); if (hq) fail(hq, quakes); });
     }
     function coin() {
       getJSON(API.crypto, 110).then(function (j) {
@@ -318,11 +332,11 @@
       var y = new Date().getFullYear();
       Promise.all([getJSON(API.hol(y), 86400), getJSON(API.hol(y + 1), 86400).catch(function () { return []; })]).then(function (r) {
         var today = new Date(); today.setHours(0, 0, 0, 0);
-        var nx = r[0].concat(r[1]).map(function (h) { var d = new Date(h.date + 'T00:00:00'); return { d: d, name: h.localName, left: Math.round((d - today) / 864e5) }; })
+        var nx = r[0].concat(r[1]).map(function (h) { var d = new Date(h.date + 'T00:00:00'); return { d: d, name: holName(h), left: Math.round((d - today) / 864e5) }; })
           .filter(function (h) { return h.left >= 0; })[0];
         if (!nx) return;
-        setText('#hol-left', nx.left === 0 ? 'Bugün' : nx.left + ' gün');
-        setText('#hol-name', nx.name + ' · ' + nx.d.getDate() + ' ' + MONTHS[nx.d.getMonth()]);
+        setText('#hol-left', nx.left === 0 ? L('Bugün') : F('{n} gün', { n: nx.left }));
+        setText('#hol-name', nx.name + ' · ' + dm(nx.d));
       }).catch(function () { setText('#hol-left', '—'); });
     }
     initCity(function (c) {
@@ -337,12 +351,18 @@
 
   /* ---------- Döviz ---------- */
   var CNAME = { TRY: 'Türk Lirası', USD: 'ABD Doları', EUR: 'Euro', GBP: 'İngiliz Sterlini', CHF: 'İsviçre Frangı', CAD: 'Kanada Doları', RUB: 'Rus Rublesi', AED: 'BAE Dirhemi', AUD: 'Avustralya Doları', DKK: 'Danimarka Kronu', SEK: 'İsveç Kronu', NOK: 'Norveç Kronu', JPY: 'Japon Yeni', KWD: 'Kuveyt Dinarı', ZAR: 'Güney Afrika Randı', BHD: 'Bahreyn Dinarı', LYD: 'Libya Dinarı', SAR: 'Suudi Riyali', IQD: 'Irak Dinarı', ILS: 'İsrail Şekeli', INR: 'Hindistan Rupisi', MXN: 'Meksika Pesosu', HUF: 'Macar Forinti', NZD: 'Yeni Zelanda Doları', BRL: 'Brezilya Reali', IDR: 'Endonezya Rupisi', CZK: 'Çek Korunası', PLN: 'Polonya Zlotisi', RON: 'Rumen Leyi', CNY: 'Çin Yuanı', ARS: 'Arjantin Pesosu', ALL: 'Arnavut Leki', AZN: 'Azerbaycan Manatı', BAM: 'Bosna-Hersek Markı', CLP: 'Şili Pesosu', COP: 'Kolombiya Pesosu', CRC: 'Kosta Rika Kolonu', DZD: 'Cezayir Dinarı', EGP: 'Mısır Lirası', HKD: 'Hong Kong Doları', ISK: 'İzlanda Kronu', KRW: 'Güney Kore Wonu', KZT: 'Kazakistan Tengesi', LBP: 'Lübnan Lirası', LKR: 'Sri Lanka Rupisi', MAD: 'Fas Dirhemi', MDL: 'Moldova Leyi', MKD: 'Makedon Dinarı', MYR: 'Malezya Ringgiti', OMR: 'Umman Riyali', PEN: 'Peru Solü', PHP: 'Filipin Pesosu', PKR: 'Pakistan Rupisi', QAR: 'Katar Riyali', RSD: 'Sırp Dinarı', SGD: 'Singapur Doları', SYP: 'Suriye Lirası', THB: 'Tayland Bahtı', TWD: 'Tayvan Doları', UAH: 'Ukrayna Grivnası', UYU: 'Uruguay Pesosu', GEL: 'Gürcü Larisi', TND: 'Tunus Dinarı', BGN: 'Bulgar Levası', VND: 'Vietnam Dongu' };
+  if (LANG !== 'tr') {
+    var AZC = { USD: 'ABŞ dolları', EUR: 'Avro', GBP: 'Britaniya funtu', CHF: 'İsveçrə frankı', SAR: 'Səudiyyə riyalı', AED: 'BƏƏ dirhəmi', AZN: 'Azərbaycan manatı', RUB: 'Rusiya rublu', JPY: 'Yaponiya yeni', CNY: 'Çin yuanı', CAD: 'Kanada dolları', AUD: 'Avstraliya dolları', KWD: 'Küveyt dinarı', QAR: 'Qətər riyalı', GEL: 'Gürcüstan larisi', BGN: 'Bolqarıstan levi', RON: 'Rumıniya leyi', PLN: 'Polşa zlotısı', SEK: 'İsveç kronu', NOK: 'Norveç kronu', DKK: 'Danimarka kronu', TRY: 'Türk lirəsi', KZT: 'Qazaxıstan tengesi', UAH: 'Ukrayna qrivnası', IQD: 'İraq dinarı', ILS: 'İsrail şekeli', EGP: 'Misir funtu', INR: 'Hindistan rupisi' };
+    try { var DN = new Intl.DisplayNames([LOC, 'en'], { type: 'currency' }); Object.keys(CNAME).forEach(function (c) { var n = DN.of(c); if (n && n !== c) CNAME[c] = n.charAt(0).toUpperCase() + n.slice(1); }); } catch (e) {}
+    if (LANG === 'az') Object.keys(AZC).forEach(function (c) { CNAME[c] = AZC[c]; });
+  }
   var FX_FIRST = ['USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AED', 'AZN', 'RUB', 'JPY', 'CNY', 'CAD', 'AUD', 'KWD', 'QAR', 'GEL', 'BGN', 'RON', 'PLN', 'SEK', 'NOK', 'DKK'];
-  var TRMON = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  var TRMON = LANG === 'tr' ? ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'] : LANG === 'az' ? ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avq', 'sen', 'okt', 'noy', 'dek'] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (i) { return new Date(2026, i, 1).toLocaleDateString(LOC, { month: 'short' }).replace('.', ''); });
   function flag(c) { return 'https://flagcdn.com/' + (c === 'EUR' ? 'eu' : c.slice(0, 2).toLowerCase()) + '.svg'; }
   function dec(v) { return v >= 100 ? 2 : v >= 1 ? 4 : 6; }
   function parseAmt(s) {
     s = String(s).replace(/\s/g, '');
+    if (LANG === 'en') return parseFloat(s.replace(/,/g, ''));
     if (s.indexOf(',') > -1) s = s.replace(/\./g, '').replace(',', '.');
     else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
     return parseFloat(s);
@@ -390,7 +410,7 @@
     return Promise.all(dates.map(function (ds) { return fawDay(ds).then(function (o) { return o[code] ? [ds, o[code]] : null; }, function () { return null; }); }))
       .then(function (a) { return a.filter(Boolean); });
   }
-  function short(c) { return ({ USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', CHF: 'Frank' })[c] || CNAME[c] || c; }
+  function short(c) { return ({ USD: L('Dolar'), EUR: L('Euro'), GBP: L('Sterlin'), CHF: L('Frank') })[c] || CNAME[c] || c; }
   function doviz() {
     var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = { days: [] }, chDays = 90, editing = false, sort = null, dir = 1, fser = {}, fbusy = {};
     var FAV = load('rahimov.fxfav'); if (!FAV || !FAV.length) FAV = FAV_DEF.slice();
@@ -425,9 +445,9 @@
     function saveFav() { save('rahimov.fxfav', FAV); }
     function toggleFav(c) {
       var i = FAV.indexOf(c);
-      if (i > -1) { FAV.splice(i, 1); toast(c + ' favorilerden çıkarıldı.'); }
-      else if (FAV.length >= FAV_MAX) { toast('En fazla ' + FAV_MAX + ' favori seçebilirsin. Önce birini çıkar.'); return; }
-      else { FAV.push(c); toast(c + ' favorilere eklendi.'); }
+      if (i > -1) { FAV.splice(i, 1); toast(F('{c} favorilerden çıkarıldı.', { c: c })); }
+      else if (FAV.length >= FAV_MAX) { toast(F('En fazla {n} favori seçebilirsin. Önce birini çıkar.', { n: FAV_MAX })); return; }
+      else { FAV.push(c); toast(F('{c} favorilere eklendi.', { c: c })); }
       saveFav(); refreshFav();
     }
     function refreshFav() {
@@ -441,14 +461,14 @@
       var html = FAV.filter(function (c) { return R[c]; }).map(function (c) {
         var x = R[c], fs = fser[c + '|30'], sv = hist[c] ? hist[c].filter(Boolean).slice(-30) : fs ? fs.map(function (p) { return p[1]; }) : null;
         if (!sv && FRANK.indexOf(c) < 0) needF(c, 30, majors);
-        return '<div class="b major" data-c="' + c + '" role="button" tabindex="0" aria-label="' + c + ' çeviriciye al">' +
+        return '<div class="b major" data-c="' + c + '" role="button" tabindex="0" aria-label="' + F('{c} çeviriciye al', { c: c }) + '">' +
           '<span class="mj-top"><img src="' + flag(c) + '" alt="" width="22" height="22"><b>' + c + '</b><span class="muted">' + (CNAME[c] || '') + '</span></span>' +
-          '<span class="mj-val num">' + nf(x.s, dec(x.s)) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· alış ' + nf(x.b, dec(x.b)) + '</span></span>' +
-          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '<span class="mj-nochart">' + (fbusy[c + '|30'] ? 'Grafik yükleniyor…' : '&nbsp;') + '</span>') +
-          (editing ? '<button type="button" class="mj-del" data-del="' + c + '" aria-label="' + c + ' favorilerden çıkar"><svg class="icon"><use href="#i-x"/></svg></button>' : '') + '</div>';
+          '<span class="mj-val num">' + nf(x.s, dec(x.s)) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· ' + L('alış') + ' ' + nf(x.b, dec(x.b)) + '</span></span>' +
+          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '<span class="mj-nochart">' + (fbusy[c + '|30'] ? L('Grafik yükleniyor…') : '&nbsp;') + '</span>') +
+          (editing ? '<button type="button" class="mj-del" data-del="' + c + '" aria-label="' + F('{c} favorilerden çıkar', { c: c }) + '"><svg class="icon"><use href="#i-x"/></svg></button>' : '') + '</div>';
       }).join('');
       for (var k = FAV.length; k < FAV_MAX; k++) {
-        html += '<label class="b major mj-empty"><svg class="icon"><use href="#i-plus"/></svg><span>Para birimi ekle</span><select class="mj-pick" aria-label="Favorilere para birimi ekle"><option value="">Seç…</option>' +
+        html += '<label class="b major mj-empty"><svg class="icon"><use href="#i-plus"/></svg><span>' + L('Para birimi ekle') + '</span><select class="mj-pick" aria-label="' + L('Favorilere para birimi ekle') + '"><option value="">' + L('Seç…') + '</option>' +
           codesAll().filter(function (c) { return FAV.indexOf(c) < 0; }).map(function (c) { return '<option value="' + c + '">' + c + ' · ' + (CNAME[c] || '') + '</option>'; }).join('') + '</select></label>';
       }
       el.innerHTML = html;
@@ -463,7 +483,7 @@
     var favEdit = $('#fav-edit');
     if (favEdit) favEdit.addEventListener('click', function () {
       editing = !editing; favEdit.setAttribute('aria-pressed', String(editing));
-      favEdit.lastChild.textContent = editing ? 'Bitti' : 'Düzenle';
+      favEdit.lastChild.textContent = editing ? L('Bitti') : L('Düzenle');
       $('#fav-hint').hidden = !editing; majors();
     });
 
@@ -478,10 +498,10 @@
       }
       var rows = codes.filter(function (c) { return !q || (c + ' ' + (CNAME[c] || '')).toLocaleLowerCase('tr').indexOf(q) > -1; }).map(function (c) {
         var x = R[c], d = dec(x.s), spr = x.s ? (x.s - x.b) / x.s * 100 : 0, on = FAV.indexOf(c) > -1;
-        return '<tr data-c="' + c + '" tabindex="0"' + (c === from.value ? ' class="is-sel"' : '') + '><td><span class="cur"><button type="button" class="star" data-star="' + c + '" aria-pressed="' + on + '" aria-label="' + c + (on ? ' favorilerden çıkar' : ' favorilere ekle') + '"><svg class="icon"><use href="#i-star"/></svg></button><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
-          '<td data-l="Alış">' + nf(x.b, d) + ' ₺</td><td data-l="Satış"><b>' + nf(x.s, d) + ' ₺</b></td><td data-l="Makas">%' + nf(spr, 2) + '</td><td data-l="Günlük">' + chg(x.c) + '</td></tr>';
+        return '<tr data-c="' + c + '" tabindex="0"' + (c === from.value ? ' class="is-sel"' : '') + '><td><span class="cur"><button type="button" class="star" data-star="' + c + '" aria-pressed="' + on + '" aria-label="' + F(on ? '{c} favorilerden çıkar' : '{c} favorilere ekle', { c: c }) + '"><svg class="icon"><use href="#i-star"/></svg></button><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
+          '<td data-l="Alış">' + nf(x.b, d) + ' ₺</td><td data-l="Satış"><b>' + nf(x.s, d) + ' ₺</b></td><td data-l="Makas">' + pc(nf(spr, 2)) + '</td><td data-l="Günlük">' + chg(x.c) + '</td></tr>';
       }).join('');
-      body.innerHTML = rows || '<tr><td colspan="5" class="muted" style="text-align:center">Aramana uyan para birimi yok.</td></tr>';
+      body.innerHTML = rows || '<tr><td colspan="5" class="muted" style="text-align:center">' + L('Aramana uyan para birimi yok.') + '</td></tr>';
     }
     body.addEventListener('click', function (e) {
       var st = e.target.closest('.star'); if (st) { toggleFav(st.dataset.star); return; }
@@ -519,18 +539,19 @@
         if (!from.options.length) options();
         convert(); majors(); table();
         setText('#fx-updated', stamp(j.Update_Date, j.__stale));
-      }).catch(function () { fail(body, loadFin); setText('#fx-updated', 'Veri alınamadı'); });
+      }).catch(function () { fail(body, loadFin); setText('#fx-updated', L('Veri alınamadı')); });
     }
     amt.addEventListener('input', convert);
     amt.addEventListener('focus', function () { amt.select(); });
     from.addEventListener('change', convert); to.addEventListener('change', convert);
     $('#fx-swap').addEventListener('click', function () { var t = from.value; from.value = to.value; to.value = t; convert(); });
+    $$('.quick button').forEach(function (b) { b.textContent = nf(+b.dataset.v, 0); });
     $$('.quick button').forEach(function (b) { b.addEventListener('click', function () { amt.value = nf(+b.dataset.v, 0); convert(); }); });
     $$('#conv .seg-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         mode = b.dataset.mode;
         $$('#conv .seg-btn').forEach(function (x) { x.setAttribute('aria-checked', String(x === b)); });
-        setText('#cv-note', mode === 'sell' ? 'Satış fiyatıyla: banka ya da büro sana döviz satarken bu fiyatı uygular.' : mode === 'buy' ? 'Alış fiyatıyla: elindeki dövizi bozdurduğunda eline yaklaşık bu kadar geçer.' : 'Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.');
+        setText('#cv-note', L(mode === 'sell' ? 'Satış fiyatıyla: banka ya da büro sana döviz satarken bu fiyatı uygular.' : mode === 'buy' ? 'Alış fiyatıyla: elindeki dövizi bozdurduğunda eline yaklaşık bu kadar geçer.' : 'Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.'));
         convert();
       });
     });
@@ -551,10 +572,10 @@
         days.forEach(function (d, i) { if (vals[i] && new Date(d) >= cutoff) pts.push([d, vals[i]]); });
       } else if (FRANK.indexOf(chCur) < 0) {
         var fs = fser[chCur + '|' + chDays];
-        if (!fs) { svg.innerHTML = ''; cur = null; setText('#ch-stats', 'Grafik verisi yükleniyor…'); needF(chCur, chDays, draw); return; }
+        if (!fs) { svg.innerHTML = ''; cur = null; setText('#ch-stats', L('Grafik verisi yükleniyor…')); needF(chCur, chDays, draw); return; }
         pts = fs;
       }
-      if (pts.length < 2) { svg.innerHTML = ''; cur = null; setText('#ch-stats', 'Bu para birimi için yeterli geçmiş veri yok.'); return; }
+      if (pts.length < 2) { svg.innerHTML = ''; cur = null; setText('#ch-stats', L('Bu para birimi için yeterli geçmiş veri yok.')); return; }
       var W = box.clientWidth || 800, H = 240, P = 10, v = pts.map(function (p) { return p[1]; });
       var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
       var X = function (i) { return i / (pts.length - 1) * W; }, Y = function (y) { return H - 24 - (y - mn) / sp * (H - 24 - P * 2) - P; };
@@ -568,7 +589,7 @@
         '<text x="0" y="' + (H - 4) + '">' + lab(pts[0][0]) + '</text><text x="' + W + '" y="' + (H - 4) + '" text-anchor="end">' + lab(pts[pts.length - 1][0]) + '</text>' +
         '<g id="ch-hl" style="display:none"><line id="ch-vl" y1="0" y2="' + (H - 24) + '"/><circle id="ch-dot" r="5"/></g>';
       var ch = (v[v.length - 1] / v[0] - 1) * 100;
-      baseStats = 'Son: <b>' + nf(v[v.length - 1], dec(v[v.length - 1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' %' + nf(Math.abs(ch), 2) + '</span> · en düşük ' + nf(mn, dd) + ' · en yüksek ' + nf(mx, dd);
+      baseStats = L('Son: ') + '<b>' + nf(v[v.length - 1], dec(v[v.length - 1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + pc(nf(Math.abs(ch), 2)) + '</span> · ' + L('en düşük') + ' ' + nf(mn, dd) + ' · ' + L('en yüksek') + ' ' + nf(mx, dd);
       setHTML('#ch-stats', baseStats);
       cur = { pts: pts, X: X, Y: Y, W: W };
     }
@@ -579,7 +600,7 @@
       var x = cur.X(i), y = cur.Y(p[1]);
       $('#ch-vl').setAttribute('x1', x); $('#ch-vl').setAttribute('x2', x); $('#ch-dot').setAttribute('cx', x); $('#ch-dot').setAttribute('cy', y);
       var d = new Date(p[0]), c0 = (p[1] / cur.pts[0][1] - 1) * 100, up = c0 >= 0;
-      setHTML('#ch-stats', '<b>' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</b> · <b>' + nf(p[1], dec(p[1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' %' + nf(Math.abs(c0), 2) + '</span> <span class="muted">dönem başına göre</span>');
+      setHTML('#ch-stats', '<b>' + trDate(d) + '</b> · <b>' + nf(p[1], dec(p[1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + pc(nf(Math.abs(c0), 2)) + '</span> <span class="muted">dönem başına göre</span>');
     }
     function leave() { var hl = $('#ch-hl'); if (hl) hl.style.display = 'none'; setHTML('#ch-stats', baseStats); }
     box.addEventListener('pointermove', hover); box.addEventListener('pointerdown', hover);
@@ -589,7 +610,7 @@
     });
     var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(draw, 150); });
     chips();
-    fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); majors(); }).catch(function () { setText('#ch-stats', 'Grafik verisi alınamadı.'); });
+    fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); majors(); }).catch(function () { setText('#ch-stats', L('Grafik verisi alınamadı.')); });
     loadFin(); setInterval(loadFin, 120000);
   }
 
@@ -609,14 +630,14 @@
     var P = {}, usd = 0, BK = load('rahimov.basket');
     if (!BK || !BK.length) BK = [{ k: 'GRA', q: 1 }];
     function keep() { save('rahimov.basket', BK); }
-    function opts(sel) { return AU_ORDER.filter(function (k) { return P[k] || !Object.keys(P).length; }).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + AU[k][0] + '</option>'; }).join(''); }
+    function opts(sel) { return AU_ORDER.filter(function (k) { return P[k] || !Object.keys(P).length; }).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + L(AU[k][0]) + '</option>'; }).join(''); }
     function renderBasket() {
       var ul = $('#bk-rows');
       ul.innerHTML = BK.map(function (it, i) {
-        var unit = AU[it.k] ? AU[it.k][2] : '';
-        return '<li data-i="' + i + '"><select class="select bk-k" aria-label="Altın türü">' + opts(it.k) + '</select>' +
-          '<span class="bk-q"><input class="input num" inputmode="decimal" value="' + String(it.q).replace('.', ',') + '" aria-label="Miktar"><small>' + unit + '</small></span>' +
-          '<span class="bk-v num">–</span><button type="button" class="icon-btn bk-del" aria-label="Satırı sil">' + '<svg class="icon"><use href="#i-x"/></svg></button></li>';
+        var unit = AU[it.k] ? L(AU[it.k][2]) : '';
+        return '<li data-i="' + i + '"><select class="select bk-k" aria-label="' + L('Altın türü') + '">' + opts(it.k) + '</select>' +
+          '<span class="bk-q"><input class="input num" inputmode="decimal" value="' + (LANG === 'en' ? String(it.q) : String(it.q).replace('.', ',')) + '" aria-label="' + L('Miktar') + '"><small>' + unit + '</small></span>' +
+          '<span class="bk-v num">–</span><button type="button" class="icon-btn bk-del" aria-label="' + L('Satırı sil') + '">' + '<svg class="icon"><use href="#i-x"/></svg></button></li>';
       }).join('');
       $$('li', ul).forEach(function (li) {
         var i = +li.dataset.i;
@@ -634,16 +655,16 @@
         if (p) { tb += it.q * p.b; ts += it.q * p.s; }
       });
       setText('#bk-buy', nf(tb, 2) + ' ₺'); setText('#bk-sell', nf(ts, 2) + ' ₺');
-      setText('#bk-usd', usd ? 'Dolar karşılığı (bozdurma): yaklaşık ' + nf(tb / usd, 0) + ' $' : '');
+      setText('#bk-usd', usd ? F('Dolar karşılığı (bozdurma): yaklaşık {n} $', { n: nf(tb / usd, 0) }) : '');
     }
     $('#bk-add').addEventListener('click', function () { BK.push({ k: 'CEYREKALTIN', q: 1 }); keep(); renderBasket(); var l = $$('#bk-rows input'); if (l.length) l[l.length - 1].focus(); });
     $('#bk-reset').addEventListener('click', function () { BK = [{ k: 'GRA', q: 1 }]; keep(); renderBasket(); });
     function card(k) {
       var p = P[k], a = AU[k], spr = (p.s - p.b) / p.s * 100;
-      return '<article class="au-card"><div class="au-name"><h3>' + a[0] + '</h3><small>' + a[1] + '</small></div>' +
+      return '<article class="au-card"><div class="au-name"><h3>' + L(a[0]) + '</h3><small>' + L(a[1]) + '</small></div>' +
         '<div class="au-price num">' + nf(p.s, 2) + ' ₺</div>' +
-        '<div class="au-meta num"><span>alış ' + nf(p.b, 2) + ' ₺</span><span>makas %' + nf(spr, 2) + '</span></div>' +
-        '<div class="au-foot">' + chg(p.c) + '<button type="button" class="linkbtn au-add" data-k="' + k + '" aria-label="' + a[0] + ' hesaba ekle">' + '<svg class="icon"><use href="#i-plus"/></svg>Ekle</button></div></article>';
+        '<div class="au-meta num"><span>' + L('alış') + ' ' + nf(p.b, 2) + ' ₺</span><span>' + L('makas') + ' ' + pc(nf(spr, 2)) + '</span></div>' +
+        '<div class="au-foot">' + chg(p.c) + '<button type="button" class="linkbtn au-add" data-k="' + k + '" aria-label="' + F('{c} hesaba ekle', { c: L(a[0]) }) + '">' + '<svg class="icon"><use href="#i-plus"/></svg>' + L('Ekle') + '</button></div></article>';
     }
     function grids() {
       var g = { coin: '', gram: '', metal: '' };
@@ -653,16 +674,16 @@
         b.addEventListener('click', function () {
           var ex = BK.filter(function (x) { return x.k === b.dataset.k; })[0];
           if (ex) ex.q += 1; else BK.push({ k: b.dataset.k, q: 1 });
-          keep(); renderBasket(); b.textContent = 'Eklendi'; setTimeout(function () { b.innerHTML = '<svg class="icon"><use href="#i-plus"/></svg>Ekle'; }, 1400);
+          keep(); renderBasket(); b.textContent = L('Eklendi'); setTimeout(function () { b.innerHTML = '<svg class="icon"><use href="#i-plus"/></svg>' + L('Ekle'); }, 1400);
         });
       });
     }
     function hero() {
       var g = P.GRA; if (!g) return;
       setText('#au-gra', nf(g.s, 2) + ' ₺');
-      setHTML('#au-gra-sub', chg(g.c) + ' <span class="muted">bugün</span>');
+      setHTML('#au-gra-sub', chg(g.c) + ' <span class="muted">' + L('bugün') + '</span>');
       setText('#au-buy', nf(g.b, 2) + ' ₺');
-      setText('#au-spread', 'makas %' + nf((g.s - g.b) / g.s * 100, 2));
+      setText('#au-spread', L('makas') + ' ' + pc(nf((g.s - g.b) / g.s * 100, 2)));
       if (usd) { setText('#au-usd', nf(g.s / usd, 2) + ' $'); setText('#au-ons', nf(g.s / usd * 31.1035, 0) + ' $'); }
       if (P.GUMUS) setText('#au-ag', nf(P.GUMUS.s, 2) + ' ₺');
     }
@@ -673,7 +694,7 @@
         usd = j.USD && j.USD.Selling || 0;
         hero(); grids(); if (first) renderBasket(); else totals();
         setText('#gold-updated', stamp(j.Update_Date, j.__stale));
-      }).catch(function () { fail($('#au-coins'), go); setText('#gold-updated', 'Veri alınamadı'); });
+      }).catch(function () { fail($('#au-coins'), go); setText('#gold-updated', L('Veri alınamadı')); });
     }
     renderBasket();
     go(); setInterval(go, 120000);
@@ -688,18 +709,18 @@
         var cur = j.current, w = wx(cur.weather_code, cur.is_day);
         var sr = j.daily.sunrise[0].slice(11, 16), ss = j.daily.sunset[0].slice(11, 16);
         $('#wx-now').innerHTML = wxIcon(w[1]) +
-          '<div><div class="wx-temp num">' + Math.round(cur.temperature_2m) + '°</div><div class="tile-sub">' + w[0] + ' · hissedilen ' + Math.round(cur.apparent_temperature) + '°</div></div>' +
-          '<dl class="wx-meta"><div><dt>Nem</dt><dd>%' + cur.relative_humidity_2m + '</dd></div><div><dt>Rüzgâr</dt><dd>' + Math.round(cur.wind_speed_10m) + ' km/sa</dd></div><div><dt>Yağış ihtimali</dt><dd>%' + (j.daily.precipitation_probability_max[0] == null ? '—' : j.daily.precipitation_probability_max[0]) + '</dd></div><div><dt>Gün doğumu</dt><dd>' + sr + '</dd></div><div><dt>Gün batımı</dt><dd>' + ss + '</dd></div><div><dt>En düşük / yüksek</dt><dd>' + Math.round(j.daily.temperature_2m_min[0]) + '° / ' + Math.round(j.daily.temperature_2m_max[0]) + '°</dd></div></dl>';
+          '<div><div class="wx-temp num">' + Math.round(cur.temperature_2m) + '°</div><div class="tile-sub">' + w[0] + ' · ' + L('hissedilen') + ' ' + Math.round(cur.apparent_temperature) + '°</div></div>' +
+          '<dl class="wx-meta"><div><dt>' + L('Nem') + '</dt><dd>' + pc(cur.relative_humidity_2m) + '</dd></div><div><dt>' + L('Rüzgâr') + '</dt><dd>' + Math.round(cur.wind_speed_10m) + ' ' + L('km/sa') + '</dd></div><div><dt>' + L('Yağış ihtimali') + '</dt><dd>' + (j.daily.precipitation_probability_max[0] == null ? '—' : pc(j.daily.precipitation_probability_max[0])) + '</dd></div><div><dt>' + L('Gün doğumu') + '</dt><dd>' + sr + '</dd></div><div><dt>' + L('Gün batımı') + '</dt><dd>' + ss + '</dd></div><div><dt>' + L('En düşük / yüksek') + '</dt><dd>' + Math.round(j.daily.temperature_2m_min[0]) + '° / ' + Math.round(j.daily.temperature_2m_max[0]) + '°</dd></div></dl>';
         var start = j.hourly.time.indexOf(cur.time.slice(0, 13) + ':00'); if (start < 0) start = 0;
         var hrs = '';
         for (var i = start; i < start + 24 && i < j.hourly.time.length; i++) {
           var hh = +j.hourly.time[i].slice(11, 13), night = hh < +sr.slice(0, 2) || hh > +ss.slice(0, 2);
-          hrs += '<div class="hour"><span class="muted">' + j.hourly.time[i].slice(11, 16) + '</span>' + wxIcon(wx(j.hourly.weather_code[i], !night)[1]) + '<b class="num">' + Math.round(j.hourly.temperature_2m[i]) + '°</b><span class="muted">%' + (j.hourly.precipitation_probability[i] == null ? '—' : j.hourly.precipitation_probability[i]) + '</span></div>';
+          hrs += '<div class="hour"><span class="muted">' + j.hourly.time[i].slice(11, 16) + '</span>' + wxIcon(wx(j.hourly.weather_code[i], !night)[1]) + '<b class="num">' + Math.round(j.hourly.temperature_2m[i]) + '°</b><span class="muted">' + (j.hourly.precipitation_probability[i] == null ? '—' : pc(j.hourly.precipitation_probability[i])) + '</span></div>';
         }
         $('#wx-hours').innerHTML = hrs;
         $('#wx-days').innerHTML = j.daily.time.map(function (t, k) {
           var d = new Date(t + 'T12:00:00'), dw = wx(j.daily.weather_code[k], 1);
-          return '<li><b>' + (k === 0 ? 'Bugün' : DAYS[d.getDay()]) + '</b>' + wxIcon(dw[1]) + '<span class="desc">' + dw[0] + ' · yağış %' + (j.daily.precipitation_probability_max[k] == null ? '—' : j.daily.precipitation_probability_max[k]) + '</span><span class="num"><b>' + Math.round(j.daily.temperature_2m_max[k]) + '°</b> <span class="muted">' + Math.round(j.daily.temperature_2m_min[k]) + '°</span></span></li>';
+          return '<li><b>' + (k === 0 ? L('Bugün') : DAYS[d.getDay()]) + '</b>' + wxIcon(dw[1]) + '<span class="desc">' + dw[0] + ' · ' + L('yağış') + ' ' + (j.daily.precipitation_probability_max[k] == null ? '—' : pc(j.daily.precipitation_probability_max[k])) + '</span><span class="num"><b>' + Math.round(j.daily.temperature_2m_max[k]) + '°</b> <span class="muted">' + Math.round(j.daily.temperature_2m_min[k]) + '°</span></span></li>';
         }).join('');
         box.hidden = false; $('#wx-err').innerHTML = '';
       }).catch(function () { box.hidden = true; fail($('#wx-err'), function () { location.reload(); }); });
@@ -712,8 +733,8 @@
       var m = +q.mag, cls = m >= 5 ? 'm5' : m >= 4 ? 'm4' : m >= 3 ? 'm3' : '';
       var co = (q.geojson && q.geojson.coordinates) || [];
       var city = q.location_properties && q.location_properties.epiCenter && q.location_properties.epiCenter.name;
-      var map = co.length === 2 ? ' <a class="more" style="font-size:13px" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=' + co[1] + '&mlon=' + co[0] + '#map=9/' + co[1] + '/' + co[0] + '">harita</a>' : '';
-      return '<tr><td><span class="mag ' + cls + '">' + nf(m, 1) + '</span></td><td class="wrap-cell" style="text-align:left"><b>' + esc(q.title || '') + '</b><span class="sub">' + (city ? esc(city) + ' · ' : '') + 'derinlik ' + nf(+q.depth, 1) + ' km' + map + '</span></td><td>' + esc(String(q.date_time || '').slice(11, 16)) + '<span class="sub">' + esc(String(q.date_time || '').slice(0, 10).split('-').reverse().join('.')) + '</span></td></tr>';
+      var map = co.length === 2 ? ' <a class="more" style="font-size:13px" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=' + co[1] + '&mlon=' + co[0] + '#map=9/' + co[1] + '/' + co[0] + '">' + L('harita') + '</a>' : '';
+      return '<tr><td><span class="mag ' + cls + '">' + nf(m, 1) + '</span></td><td class="wrap-cell" style="text-align:left"><b>' + esc(q.title || '') + '</b><span class="sub">' + (city ? esc(city) + ' · ' : '') + F('derinlik {n} km', { n: nf(+q.depth, 1) }) + map + '</span></td><td>' + esc(String(q.date_time || '').slice(11, 16)) + '<span class="sub">' + esc(String(q.date_time || '').slice(0, 10).split('-').reverse().join('.')) + '</span></td></tr>';
     }).join('');
   }
   function deprem() {
@@ -722,7 +743,7 @@
     function render() {
       var q = norm(search.value.trim());
       var list = all.filter(function (e) { return +e.mag >= min && (!q || norm(e.title).indexOf(q) !== -1); });
-      body.innerHTML = list.length ? quakeRows(list) : '<tr><td colspan="3" style="text-align:center" class="muted">Bu filtreye uyan deprem yok.</td></tr>';
+      body.innerHTML = list.length ? quakeRows(list) : '<tr><td colspan="3" style="text-align:center" class="muted">' + L('Bu filtreye uyan deprem yok.') + '</td></tr>';
     }
     function go() {
       getJSON(API.quake, 110).then(function (j) {
@@ -747,7 +768,7 @@
   }
 
   /* ---------- Namaz vakitleri ---------- */
-  var HIJRI = ['Muharrem', 'Safer', 'Rebiülevvel', 'Rebiülahir', 'Cemaziyelevvel', 'Cemaziyelahir', 'Recep', 'Şaban', 'Ramazan', 'Şevval', 'Zilkade', 'Zilhicce'];
+  var HIJRI = ['Muharrem', 'Safer', 'Rebiülevvel', 'Rebiülahir', 'Cemaziyelevvel', 'Cemaziyelahir', 'Recep', 'Şaban', 'Ramazan', 'Şevval', 'Zilkade', 'Zilhicce'].map(function (m) { return L('hicri:' + m) === 'hicri:' + m ? m : L('hicri:' + m); });
   var PR = [['Imsak', 'İmsak'], ['Sunrise', 'Güneş'], ['Dhuhr', 'Öğle'], ['Asr', 'İkindi'], ['Maghrib', 'Akşam'], ['Isha', 'Yatsı']];
   function namaz() {
     var tick, grid = $('#pray-grid');
@@ -758,16 +779,16 @@
       clearInterval(tick);
       getJSON(API.pray(c, pad(now.getDate()) + '-' + pad(now.getMonth() + 1) + '-' + now.getFullYear()), 3600).then(function (j) {
         var t = j.data.timings, h = j.data.date.hijri;
-        setText("#pray-hijri", "Hicri " + +h.day + " " + (HIJRI[h.month.number - 1] || h.month.en) + " " + h.year);
+        setText("#pray-hijri", L("Hicri") + " " + +h.day + " " + (HIJRI[h.month.number - 1] || h.month.en) + " " + h.year);
         function draw() {
           var n = new Date(), cur = n.getHours() * 60 + n.getMinutes(), next = -1;
           PR.forEach(function (p, i) { var a = t[p[0]].slice(0, 5).split(':'); if (next < 0 && +a[0] * 60 + +a[1] > cur) next = i; });
           grid.innerHTML = PR.map(function (p, i) {
-            return '<div class="card pray' + (i === next ? ' is-next' : '') + '"><small>' + p[1] + '</small><b>' + t[p[0]].slice(0, 5) + '</b></div>';
+            return '<div class="card pray' + (i === next ? ' is-next' : '') + '"><small>' + L(p[1]) + '</small><b>' + t[p[0]].slice(0, 5) + '</b></div>';
           }).join('');
-          if (next < 0) { setText('#pray-next', 'Bugünün vakitleri tamamlandı. Yarının imsak vakti için aşağıdaki aylık tabloya bak.'); return; }
+          if (next < 0) { setText('#pray-next', L('Bugünün vakitleri tamamlandı. Yarının imsak vakti için aşağıdaki aylık tabloya bak.')); return; }
           var a = t[PR[next][0]].slice(0, 5).split(':'), left = (+a[0] * 60 + +a[1]) * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds());
-          setText('#pray-next', PR[next][1] + ' vaktine ' + Math.floor(left / 3600) + ' saat ' + Math.floor(left % 3600 / 60) + ' dakika ' + (left % 60) + ' saniye kaldı.');
+          setText('#pray-next', F('{p} vaktine {h} saat {m} dakika {s} saniye kaldı.', { p: L(PR[next][1]), h: Math.floor(left / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 }));
         }
         draw(); tick = setInterval(draw, 1000);
         $('#pray-err').innerHTML = '';
@@ -775,10 +796,10 @@
       getJSON(API.prayMonth(c, now.getFullYear(), now.getMonth() + 1), 3600).then(function (j) {
         $('#pray-month').innerHTML = j.data.map(function (d) {
           var g = d.date.gregorian, today = +g.day === now.getDate();
-          return '<tr' + (today ? ' class="is-next"' : '') + '><td><b>' + +g.day + '<span class="mo"> ' + MONTHS[now.getMonth()] + '</span></b></td>' + PR.map(function (p) { return '<td>' + d.timings[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
+          return '<tr' + (today ? ' class="is-next"' : '') + '><td><b>' + +g.day + '<span class="mo"> ' + (LANG === 'tr' ? MONTHS[now.getMonth()] : '') + '</span></b></td>' + PR.map(function (p) { return '<td>' + d.timings[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
         }).join('');
-        setText('#pray-month-title', MONTHS[now.getMonth()] + ' ' + now.getFullYear() + ' — ' + c.name);
-      }).catch(function () { $('#pray-month').innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Aylık tablo alınamadı.</td></tr>'; });
+        setText('#pray-month-title', (LANG === 'tr' || LANG === 'az' ? cap(MONTHS[now.getMonth()]) + ' ' + now.getFullYear() : cap(now.toLocaleDateString(LOC, { month: 'long', year: 'numeric' }))) + ' — ' + c.name);
+      }).catch(function () { $('#pray-month').innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">' + L('Aylık tablo alınamadı.') + '</td></tr>'; });
     });
   }
 
@@ -793,7 +814,7 @@
           return '<tr><td><b>' + c[1] + '</b><span class="sub">' + c[2] + '</span></td><td>' + nf(x.usd, d) + ' $</td><td>' + nf(x.try, d) + ' ₺</td><td>' + chg(x.usd_24h_change) + '</td></tr>';
         }).join('');
         var n = new Date();
-        setText('#c-updated', 'Son güncelleme: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()));
+        setText('#c-updated', L('Son güncelleme: ') + pad(n.getHours()) + ':' + pad(n.getMinutes()));
       }).catch(function () { fail(body, function () { location.reload(); }); });
     }
     go(); setInterval(go, 120000);
@@ -804,15 +825,15 @@
     var y = new Date().getFullYear(), body = $('#h-body');
     Promise.all([getJSON(API.hol(y), 86400), getJSON(API.hol(y + 1), 86400).catch(function () { return []; })]).then(function (r) {
       var today = new Date(); today.setHours(0, 0, 0, 0);
-      var list = r[0].concat(r[1]).map(function (h) { var d = new Date(h.date + 'T00:00:00'); return { d: d, name: h.localName, left: Math.round((d - today) / 864e5) }; });
+      var list = r[0].concat(r[1]).map(function (h) { var d = new Date(h.date + 'T00:00:00'); return { d: d, name: holName(h), left: Math.round((d - today) / 864e5) }; });
       var next = list.filter(function (h) { return h.left >= 0; })[0];
       if (next) {
         setText('#h-next-name', next.name);
         setText('#h-next-date', trDate(next.d) + ', ' + DAYS[next.d.getDay()]);
-        setText('#h-next-left', next.left === 0 ? 'Bugün' : next.left + ' gün');
+        setText('#h-next-left', next.left === 0 ? L('Bugün') : F('{n} gün', { n: next.left }));
       }
       body.innerHTML = list.filter(function (h) { return h.left >= -1 || h.d.getFullYear() === y; }).map(function (h) {
-        return '<tr' + (h === next ? ' class="is-next"' : '') + '><td class="wrap-cell"><b>' + esc(h.name) + '</b></td><td>' + trDate(h.d) + '</td><td>' + DAYS[h.d.getDay()] + '</td><td>' + (h.left < 0 ? '<span class="muted">geçti</span>' : h.left === 0 ? 'bugün' : h.left + ' gün') + '</td></tr>';
+        return '<tr' + (h === next ? ' class="is-next"' : '') + '><td class="wrap-cell"><b>' + esc(h.name) + '</b></td><td>' + trDate(h.d) + '</td><td>' + DAYS[h.d.getDay()] + '</td><td>' + (h.left < 0 ? '<span class="muted">' + L('geçti') + '</span>' : h.left === 0 ? L('bugün') : F('{n} gün', { n: h.left })) + '</td></tr>';
       }).join('');
     }).catch(function () { fail(body, function () { location.reload(); }); });
   }
