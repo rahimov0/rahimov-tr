@@ -28,7 +28,7 @@
     --accent: #FB8A4A; --accent-ink: #1A0D05; --accent-soft: #2E1C12;
     --primary: #F2EEE6; --on-primary: #121110;
     --up: #5CC58C; --down: #F27A71;
-    --t-fx: #18241C; --t-wx: #152130; --t-quake: #2B1914; --t-coin: #26211A; --t-hol: #211C2C; --t-game: #F2EEE6; --t-game-ink: #121110;
+    --t-fx: #18241C; --t-wx: #152130; --t-quake: #2B1914; --t-coin: #26211A; --t-hol: #211C2C; --t-game: #2A2723; --t-game-ink: #F2EEE6;
     --m3-bg: #3A2E0E; --m3: #F5CD5B; --m4-bg: #3E2312; --m4: #FBA66A; --m5-bg: #45191A; --m5: #FF8F87;
     --shadow: 0 1px 0 rgba(0,0,0,.25);
     --shadow-lift: 0 18px 40px -18px rgba(0,0,0,.8);
@@ -42,7 +42,7 @@
   --accent: #FB8A4A; --accent-ink: #1A0D05; --accent-soft: #2E1C12;
   --primary: #F2EEE6; --on-primary: #121110;
   --up: #5CC58C; --down: #F27A71;
-  --t-fx: #18241C; --t-wx: #152130; --t-quake: #2B1914; --t-coin: #26211A; --t-hol: #211C2C; --t-game: #F2EEE6; --t-game-ink: #121110;
+  --t-fx: #18241C; --t-wx: #152130; --t-quake: #2B1914; --t-coin: #26211A; --t-hol: #211C2C; --t-game: #2A2723; --t-game-ink: #F2EEE6;
   --m3-bg: #3A2E0E; --m3: #F5CD5B; --m4-bg: #3E2312; --m4: #FBA66A; --m5-bg: #45191A; --m5: #FF8F87;
   --shadow: 0 1px 0 rgba(0,0,0,.25);
   --shadow-lift: 0 18px 40px -18px rgba(0,0,0,.8);
@@ -98,7 +98,7 @@ img.logo { object-fit: cover; }
   :root:not([data-theme="light"]) .theme-btn .moon { display: none; }
 }
 .menu-btn { display: none; }
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .menu-btn { display: grid; }
   .nav .wrap { gap: 8px; }
   .nav .brand { margin-right: auto; }

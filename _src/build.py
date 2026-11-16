@@ -36,7 +36,8 @@ TOOLS = [
 TONE = {'doviz': 'fx', 'altin': 'coin', 'hava': 'wx', 'deprem': 'quake', 'namaz': 'pray', 'kripto': 'coin', 'tatil': 'hol'}
 
 NAV = [("/araclar/", "Araçlar", "araclar"), ("/doviz/", "Döviz", "doviz"), ("/altin/", "Altın", "altin"),
-       ("/hava-durumu/", "Hava durumu", "hava"), ("/deprem/", "Deprem", "deprem"), ("/projeler/", "Projeler", "projeler")]
+       ("/hava-durumu/", "Hava durumu", "hava"), ("/deprem/", "Deprem", "deprem"),
+       ("/namaz-vakitleri/", "Namaz", "namaz"), ("/projeler/", "Projeler", "projeler")]
 
 FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%231A1917'/%3E%3Cpath d='M22 46V18h12a8 8 0 0 1 0 16H22m12 0 8 12' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='47' cy='18' r='4' fill='%23FB923C'/%3E%3C/svg%3E"
 
