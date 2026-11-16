@@ -349,6 +349,8 @@ a.tile:hover, a.card:hover { box-shadow: var(--shadow-lift); transform: translat
 .fav-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .fav-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 4px; font-size: 14px; font-weight: 800; color: var(--text-2); }
 .fav-head small { font-weight: 700; }
+.fav-tip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.fav-tip .icon { width: 14px; height: 14px; color: #E0A100; fill: currentColor; }
 .fav-col .fx-majors { flex: 1; grid-auto-rows: 1fr; }
 .fav-hint { font-size: 13px; line-height: 19px; color: var(--text-3); padding: 0 4px; }
 .major { position: relative; }

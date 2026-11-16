@@ -53,18 +53,29 @@
         return r.json();
       });
     }
-    return once().catch(function () {
-      return new Promise(function (res) { setTimeout(res, 1500); }).then(once);   /* geçici/yarım yanıt için bir kez daha dene */
-    }).then(function (d) {
+    function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+    /* Geçici ağ hatası ya da yarım gelen yanıt için 3 deneme */
+    var lgKey = /truncgil\.com|coingecko\.com/.test(url) ? 'lg:' + url : null;
+    return once().catch(function () { return wait(1200).then(once); }).catch(function () { return wait(3000).then(once); }).then(function (d) {
       try { sessionStorage.setItem(key, JSON.stringify({ t: now, d: d })); } catch (e) {}
+      if (lgKey) save(lgKey, { t: now, d: d });
       return d;
     }, function (e) {
       lastErr = (url.split('/')[2] || '') + ' → ' + (e && e.message ? e.message : e);
+      /* Hiç alınamazsa bu cihazdaki son başarılı veriyi göster */
+      var lg = lgKey && load(lgKey);
+      if (lg && lg.d && now - lg.t < 3 * 864e5) { var d = lg.d; d.__stale = lg.t; return d; }
       throw e;
     });
   }
   function fail(el, retry) {
     if (!el) return;
+    if (el.tagName === 'TBODY') {   /* tabloyu silme; hata satırı göster ki sonraki yenileme tabloyu doldurabilsin */
+      var n = el.parentNode.querySelectorAll('thead th').length || 3;
+      el.innerHTML = '<tr><td colspan="' + n + '" style="white-space:normal"><div class="error-box">Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.' + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">Ayrıntı: ' + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-top:8px">Şimdi dene</button></div></td></tr>';
+      var bt = $('button', el); if (bt && retry) bt.addEventListener('click', retry);
+      return;
+    }
     el.innerHTML = '<div class="error-box">Veri şu an alınamadı. Bağlantını kontrol edip biraz sonra tekrar dene.' + (lastErr ? ' <small class="muted" style="display:block;margin-top:6px">Ayrıntı: ' + esc(lastErr) + '</small>' : '') + ' <button class="btn btn-secondary btn-sm" type="button" style="margin-left:8px">Tekrar dene</button></div>';
     var b = $('button', el); if (b && retry) b.addEventListener('click', retry);
   }
@@ -74,7 +85,7 @@
     return '<span class="' + cls + '">' + (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + '%' + nf(Math.abs(v)) + '</span>';
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function stamp(src) { var n = new Date(); return 'Kaynak verisi: ' + (src || '—') + ' · Son kontrol: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
+  function stamp(src, stale) { var n = new Date(); if (stale) { var s = new Date(stale); return 'Bağlantı sorunu: ' + pad(s.getHours()) + ':' + pad(s.getMinutes()) + ' itibarıyla kayıtlı veri gösteriliyor · yeniden deneniyor'; } return 'Kaynak verisi: ' + (src || '—') + ' · Son kontrol: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
   function setText(sel, t) { var e = $(sel); if (e) { e.textContent = t; e.classList.remove('skeleton'); } }
   function setHTML(sel, t) { var e = $(sel); if (e) { e.innerHTML = t; e.classList.remove('skeleton'); } }
 
@@ -214,7 +225,7 @@
           setText('#c-' + i[0], nf(x.Selling, i[1]) + ' ₺');
           setHTML('#c-' + i[0] + '-c', chg(x.Change));
         });
-        setText('#fx-time', stamp(j.Update_Date));
+        setText('#fx-time', stamp(j.Update_Date, j.__stale));
       }).catch(function () { setText('#t-usd', '—'); setText('#t-usd-sub', 'Veri alınamadı'); });
     }
     function spark() {
@@ -285,7 +296,7 @@
         setText('#qk-time', ago(q.date_time) + ' · ' + nf(+q.depth, 1) + ' km derinlik');
         setHTML('#qk-list', L.slice(1, 4).map(function (e) { return '<li><span>' + esc(e.title || '') + '</span><b>' + nf(+e.mag, 1) + '</b></li>'; }).join(''));
         var hq = $('#home-quakes'); if (hq) hq.innerHTML = quakeRows(L.slice(0, 5));
-      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); var hq = $('#home-quakes'); if (hq) fail(hq.closest('.table-wrap'), quakes); });
+      }).catch(function () { setText('#qk-place', 'Veri alınamadı'); var hq = $('#home-quakes'); if (hq) fail(hq, quakes); });
     }
     function coin() {
       getJSON(API.crypto, 110).then(function (j) {
@@ -352,11 +363,29 @@
     el.textContent = msg; el.classList.add('show');
     clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 3500);
   }
+  /* Merkez bankası listesinde olmayan kurlar (AZN, SAR, RUB…) için günlük arşiv: jsDelivr üzerindeki açık döviz verisi.
+     Geçmiş günler değişmediği için her gün bu cihazda kalıcı saklanır. */
+  var FAW = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@';
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fawDay(ds) {
+    var k = 'faw:' + ds, c = load(k); if (c) return Promise.resolve(c);
+    return timed(FAW + ds + '/v1/currencies/try.min.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) {
+      var o = {}; Object.keys(CNAME).forEach(function (c) { var v = j.try && j.try[c.toLowerCase()]; if (v) o[c] = +(1 / v).toPrecision(6); });
+      save(k, o); return o;
+    });
+  }
+  function fawSeries(code, days) {
+    var step = days > 200 ? 14 : days > 60 ? 5 : 2, dates = [], y = new Date(); y.setDate(y.getDate() - 1);
+    for (var i = 0; i <= days; i++) { var d = new Date(y); d.setDate(y.getDate() - i); if (i === 0 || Math.floor(d.getTime() / 864e5) % step === 0) dates.push(ymd(d)); }
+    dates.reverse();
+    return Promise.all(dates.map(function (ds) { return fawDay(ds).then(function (o) { return o[code] ? [ds, o[code]] : null; }, function () { return null; }); }))
+      .then(function (a) { return a.filter(Boolean); });
+  }
   function short(c) { return ({ USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', CHF: 'Frank' })[c] || CNAME[c] || c; }
   function doviz() {
-    var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = { days: [] }, chDays = 90, editing = false, sort = null, dir = 1;
+    var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = { days: [] }, chDays = 90, editing = false, sort = null, dir = 1, fser = {}, fbusy = {};
     var FAV = load('rahimov.fxfav'); if (!FAV || !FAV.length) FAV = FAV_DEF.slice();
-    var chCur = FAV.filter(function (c) { return FRANK.indexOf(c) > -1; })[0] || 'USD';
+    var chCur = FAV[0] || 'USD';
     var amt = $('#fx-amt'), from = $('#fx-from'), to = $('#fx-to'), res = $('#fx-res'), body = $('#fx-body'), search = $('#fx-search');
     function rate(c) { var x = R[c]; if (!x) return NaN; return mode === 'sell' ? x.s : mode === 'buy' ? x.b : (x.b + x.s) / 2; }
     function convert() {
@@ -378,6 +407,11 @@
     }
     function setFrom(c) { from.value = c; if (to.value === c) to.value = 'TRY'; convert(); $('#conv').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
+    function needF(code, days, then) {
+      var k = code + '|' + days; if (fser[k] || fbusy[k] || FRANK.indexOf(code) > -1) return;
+      fbusy[k] = 1;
+      fawSeries(code, days).then(function (p) { fser[k] = p; delete fbusy[k]; if (then) then(); }, function () { delete fbusy[k]; });
+    }
     /* ---- favoriler ---- */
     function saveFav() { save('rahimov.fxfav', FAV); }
     function toggleFav(c) {
@@ -396,11 +430,12 @@
       var el = $('#fx-majors'); if (!el) return;
       setText('#fav-count', FAV.length + '/' + FAV_MAX);
       var html = FAV.filter(function (c) { return R[c]; }).map(function (c) {
-        var x = R[c], sv = hist[c] ? hist[c].filter(Boolean).slice(-30) : null;
+        var x = R[c], fs = fser[c + '|30'], sv = hist[c] ? hist[c].filter(Boolean).slice(-30) : fs ? fs.map(function (p) { return p[1]; }) : null;
+        if (!sv && FRANK.indexOf(c) < 0) needF(c, 30, majors);
         return '<div class="b major" data-c="' + c + '" role="button" tabindex="0" aria-label="' + c + ' çeviriciye al">' +
           '<span class="mj-top"><img src="' + flag(c) + '" alt="" width="22" height="22"><b>' + c + '</b><span class="muted">' + (CNAME[c] || '') + '</span></span>' +
           '<span class="mj-val num">' + nf(x.s, dec(x.s)) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· alış ' + nf(x.b, dec(x.b)) + '</span></span>' +
-          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '<span class="mj-nochart">Geçmiş grafiği yok</span>') +
+          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '<span class="mj-nochart">' + (fbusy[c + '|30'] ? 'Grafik yükleniyor…' : '&nbsp;') + '</span>') +
           (editing ? '<button type="button" class="mj-del" data-del="' + c + '" aria-label="' + c + ' favorilerden çıkar"><svg class="icon"><use href="#i-x"/></svg></button>' : '') + '</div>';
       }).join('');
       for (var k = FAV.length; k < FAV_MAX; k++) {
@@ -417,7 +452,7 @@
       $$('.mj-pick', el).forEach(function (s) { s.addEventListener('change', function () { if (s.value) toggleFav(s.value); }); });
     }
     var favEdit = $('#fav-edit');
-    favEdit.addEventListener('click', function () {
+    if (favEdit) favEdit.addEventListener('click', function () {
       editing = !editing; favEdit.setAttribute('aria-pressed', String(editing));
       favEdit.lastChild.textContent = editing ? 'Bitti' : 'Düzenle';
       $('#fav-hint').hidden = !editing; majors();
@@ -474,8 +509,8 @@
         scaleFix();
         if (!from.options.length) options();
         convert(); majors(); table();
-        setText('#fx-updated', stamp(j.Update_Date));
-      }).catch(function () { fail(body.closest('.table-wrap'), loadFin); setText('#fx-updated', 'Veri alınamadı'); });
+        setText('#fx-updated', stamp(j.Update_Date, j.__stale));
+      }).catch(function () { fail(body, loadFin); setText('#fx-updated', 'Veri alınamadı'); });
     }
     amt.addEventListener('input', convert);
     amt.addEventListener('focus', function () { amt.select(); });
@@ -494,19 +529,23 @@
     /* ---- grafik: üzerinde gezinince değer başlığa yazılır ---- */
     var box = $('#ch-box'), svg = $('#fx-chart'), cur = null, baseStats = '';
     function chips() {
-      var list = FAV.filter(function (c) { return FRANK.indexOf(c) > -1; });
-      if (list.indexOf(chCur) < 0) chCur = list[0] || 'USD';
-      if (!list.length) list = ['USD'];
+      var list = FAV.length ? FAV.slice() : ['USD'];
+      if (list.indexOf(chCur) < 0) chCur = list[0];
       setHTML('#ch-cur', list.map(function (c) { return '<button type="button" class="seg-btn" data-c="' + c + '" aria-pressed="' + (c === chCur) + '">' + c + '</button>'; }).join(''));
-      $$('#ch-cur .seg-btn').forEach(function (b) { b.addEventListener('click', function () { chCur = b.dataset.c; chips(); if (!hist[chCur]) fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); }); else draw(); }); });
+      $$('#ch-cur .seg-btn').forEach(function (b) { b.addEventListener('click', function () { chCur = b.dataset.c; chips(); if (FRANK.indexOf(chCur) > -1 && !hist[chCur]) fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); }); else draw(); }); });
     }
     function draw() {
       var vals = hist[chCur], days = hist.days, pts = [];
       setText('#ch-name', short(chCur));
-      if (!vals) { svg.innerHTML = ''; return; }
-      var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - chDays);
-      days.forEach(function (d, i) { if (vals[i] && new Date(d) >= cutoff) pts.push([d, vals[i]]); });
-      if (pts.length < 2) return;
+      if (vals) {
+        var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - chDays);
+        days.forEach(function (d, i) { if (vals[i] && new Date(d) >= cutoff) pts.push([d, vals[i]]); });
+      } else if (FRANK.indexOf(chCur) < 0) {
+        var fs = fser[chCur + '|' + chDays];
+        if (!fs) { svg.innerHTML = ''; cur = null; setText('#ch-stats', 'Grafik verisi yükleniyor…'); needF(chCur, chDays, draw); return; }
+        pts = fs;
+      }
+      if (pts.length < 2) { svg.innerHTML = ''; cur = null; setText('#ch-stats', 'Bu para birimi için yeterli geçmiş veri yok.'); return; }
       var W = box.clientWidth || 800, H = 240, P = 10, v = pts.map(function (p) { return p[1]; });
       var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
       var X = function (i) { return i / (pts.length - 1) * W; }, Y = function (y) { return H - 24 - (y - mn) / sp * (H - 24 - P * 2) - P; };
@@ -624,7 +663,7 @@
         AU_ORDER.forEach(function (k) { var x = j[k]; if (x && x.Selling > 0) P[k] = { b: x.Buying, s: x.Selling, c: x.Change }; });
         usd = j.USD && j.USD.Selling || 0;
         hero(); grids(); if (first) renderBasket(); else totals();
-        setText('#gold-updated', stamp(j.Update_Date));
+        setText('#gold-updated', stamp(j.Update_Date, j.__stale));
       }).catch(function () { fail($('#au-coins'), go); setText('#gold-updated', 'Veri alınamadı'); });
     }
     renderBasket();
@@ -685,7 +724,7 @@
         if (mx) { setText('#q-max', nf(+mx.mag, 1)); setText('#q-max-sub', mx.title); }
         if (all[0]) { setText('#q-last', String(all[0].date_time).slice(11, 16)); setText('#q-last-sub', all[0].title + ' · ' + nf(+all[0].mag, 1)); }
         render();
-      }).catch(function () { fail(body.closest('.table-wrap'), function () { location.reload(); }); });
+      }).catch(function () { fail(body, function () { location.reload(); }); });
     }
     $$('.q-min').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -746,7 +785,7 @@
         }).join('');
         var n = new Date();
         setText('#c-updated', 'Son güncelleme: ' + pad(n.getHours()) + ':' + pad(n.getMinutes()));
-      }).catch(function () { fail(body.closest('.table-wrap'), function () { location.reload(); }); });
+      }).catch(function () { fail(body, function () { location.reload(); }); });
     }
     go(); setInterval(go, 120000);
   }
@@ -766,7 +805,7 @@
       body.innerHTML = list.filter(function (h) { return h.left >= -1 || h.d.getFullYear() === y; }).map(function (h) {
         return '<tr' + (h === next ? ' class="is-next"' : '') + '><td class="wrap-cell"><b>' + esc(h.name) + '</b></td><td>' + trDate(h.d) + '</td><td>' + DAYS[h.d.getDay()] + '</td><td>' + (h.left < 0 ? '<span class="muted">geçti</span>' : h.left === 0 ? 'bugün' : h.left + ' gün') + '</td></tr>';
       }).join('');
-    }).catch(function () { fail(body.closest('.table-wrap'), function () { location.reload(); }); });
+    }).catch(function () { fail(body, function () { location.reload(); }); });
   }
 
   var pages = { home: home, doviz: doviz, altin: altin, hava: hava, deprem: deprem, namaz: namaz, kripto: kripto, tatil: tatil };

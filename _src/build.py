@@ -367,9 +367,9 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
       <div class="quick" aria-label="Hızlı tutar"><button type="button" data-v="1">1</button><button type="button" data-v="100">100</button><button type="button" data-v="500">500</button><button type="button" data-v="1000">1.000</button><button type="button" data-v="10000">10.000</button></div>
       <p class="b-foot" id="cv-note">Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.</p>
     </div>
-    <div class="fav-col"><div class="fav-head"><span>Favorilerim <small class="muted" id="fav-count"></small></span><button class="linkbtn" type="button" id="fav-edit" aria-pressed="false">{icon('i-edit')}Düzenle</button></div>
+    <div class="fav-col"><div class="fav-head"><span>Favorilerim <small class="muted" id="fav-count"></small></span><span class="fav-tip">{icon('i-star')}Listeden yıldızla seç</span></div>
       <div class="fx-majors" id="fx-majors" aria-label="Favori kurlar"></div>
-      <p class="fav-hint" id="fav-hint" hidden>Kartın köşesindeki çarpıyla çıkar, boş kutudan yeni para birimi ekle. Aşağıdaki listede yıldıza dokunarak da seçebilirsin.</p></div>
+      </div>
   </div>
 
   <div class="b chart-card" style="margin-top:var(--gap)">
@@ -381,7 +381,7 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
       </div>
     </div>
     <div class="chart-box" id="ch-box"><svg class="chart" id="fx-chart" role="img" aria-label="Kur grafiği" preserveAspectRatio="none"></svg></div>
-    <p class="muted" style="font-size:13px;margin-top:8px">Grafik merkez bankalarının günlük referans kurlarını gösterir; hafta sonu ve tatillerde veri yoktur. Üzerinde gezinerek ya da parmağını kaydırarak gün gün değeri gör. Grafik düğmeleri favorilerinden gelir.</p>
+    <p class="muted" style="font-size:13px;margin-top:8px">Grafik merkez bankalarının günlük referans kurlarını gösterir; bu listede olmayan para birimlerinde (ör. AZN, SAR) açık döviz arşivinden daha seyrek noktalarla çizilir. Üzerinde gezinerek ya da parmağını kaydırarak gün gün değeri gör. Grafik düğmeleri favorilerinden gelir.</p>
   </div>
 
   <div class="list-head">
