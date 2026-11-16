@@ -167,32 +167,31 @@ struct NamazView: View {
                 Text("\(nextTime) · \(s.city)").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }.containerBackground(for: .widget) { Color.clear }
         case .systemSmall:
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 5) {
                     Image(systemName: s.ramadan ? "moon.stars.fill" : (Prayer(rawValue: s.nextIndex)?.symbol ?? "moon.fill")).symbolRenderingMode(.hierarchical)
                     Text(s.city).lineLimit(1)
-                }.font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85))
+                }.font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
+                Text(s.targetName).font(.system(size: 15, weight: .bold)).foregroundStyle(.white).lineLimit(1).padding(.top, 4)
+                if let t = s.target { Countdown(from: e.date, to: t, size: 26) }
                 Spacer(minLength: 0)
-                Text(s.targetName).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                if let t = s.target {
-                    Text(t, style: .timer).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(.white).minimumScaleFactor(0.6).lineLimit(1)
-                }
-                PrayerProgress(s: s).padding(.vertical, 3)
-                Text(s.hijri.isEmpty ? nextTime : "\(s.hijri) · \(nextTime)").font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.8)).lineLimit(1)
+                PrayerProgress(s: s).frame(width: 84)
+                Text(s.hijri.isEmpty ? nextTime : s.hijri).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1).padding(.top, 3)
             }
-            .containerBackground(for: .widget) { skyGradient(s.phase, ramadan: s.ramadan) }
+            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .containerBackground(for: .widget) { PrayerSky(phase: s.phase, ramadan: s.ramadan, mosqueScale: 0.44) }
         case .systemMedium:
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(s.city).font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.9)).lineLimit(1)
-                    Text(s.hijri.isEmpty ? s.hijriDate : s.hijri).font(.caption2).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(s.city).font(.system(size: 13, weight: .bold)).foregroundStyle(.white).lineLimit(1)
+                    Text(s.hijri.isEmpty ? s.hijriDate : s.hijri).font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.8)).lineLimit(1)
                     Spacer(minLength: 0)
-                    Text(s.targetName).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                    if let t = s.target {
-                        Text(t, style: .timer).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(.white).minimumScaleFactor(0.6).lineLimit(1)
-                    }
-                    PrayerProgress(s: s).padding(.top, 2)
+                    Text(s.targetName).font(.system(size: 14, weight: .bold)).foregroundStyle(.white).lineLimit(1)
+                    if let t = s.target { Countdown(from: e.date, to: t, size: 28) }
+                    PrayerProgress(s: s).frame(maxWidth: 120).padding(.top, 3)
                 }
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let d = s.day {
                     VStack(spacing: 1) {
@@ -200,43 +199,47 @@ struct NamazView: View {
                             PrayerRow(p: p, time: d.times[p.rawValue], isNext: p.rawValue == s.nextIndex && !s.ramadan)
                         }
                     }
-                    .frame(width: 138)
+                    .padding(4)
+                    .background(.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 146)
                 }
             }
-            .containerBackground(for: .widget) { skyGradient(s.phase, ramadan: s.ramadan) }
+            .containerBackground(for: .widget) { PrayerSky(phase: s.phase, ramadan: s.ramadan, mosqueScale: 0.62, mosqueAlign: .bottomLeading) }
         default:
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(s.city).font(.headline).foregroundStyle(.white)
-                        Text(s.hijriDate).font(.caption).foregroundStyle(.white.opacity(0.75))
+                        Text(s.city).font(.system(size: 17, weight: .bold)).foregroundStyle(.white)
+                        Text(s.hijriDate).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.8))
                     }
                     Spacer()
-                    Image(systemName: s.ramadan ? "moon.stars.fill" : "building.columns.fill").font(.title3).foregroundStyle(.white.opacity(0.8))
+                    if !s.hijri.isEmpty { Text(s.hijri).font(.system(size: 12, weight: .bold)).foregroundStyle(hexWarm).padding(.horizontal, 8).padding(.vertical, 4).background(.black.opacity(0.25), in: Capsule()) }
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(s.targetName).font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.9))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(s.targetName).font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
                     HStack(alignment: .firstTextBaseline) {
-                        if let t = s.target { Text(t, style: .timer).font(.system(size: 40, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(.white) }
+                        if let t = s.target { Countdown(from: e.date, to: t, size: 38) }
                         Spacer()
-                        Text(nextTime).font(.title3.weight(.semibold)).monospacedDigit().foregroundStyle(.white.opacity(0.85))
+                        Text(nextTime).font(.system(size: 17, weight: .semibold)).monospacedDigit().foregroundStyle(.white.opacity(0.9))
                     }
-                    PrayerProgress(s: s)
-                    if !s.hijri.isEmpty { Text(s.hijri).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85)) }
+                    PrayerProgress(s: s).padding(.top, 2)
                 }
-                .padding(12).background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                Spacer(minLength: 0)
                 if let d = s.day {
-                    VStack(spacing: 3) {
+                    VStack(spacing: 2) {
                         ForEach(Prayer.allCases, id: \.rawValue) { p in
                             PrayerRow(p: p, time: d.times[p.rawValue], isNext: p.rawValue == s.nextIndex && !s.ramadan, big: true)
                         }
                     }
+                    .padding(5)
+                    .background(.black.opacity(0.24), in: RoundedRectangle(cornerRadius: 16))
                 }
-                Spacer(minLength: 0)
             }
-            .containerBackground(for: .widget) { skyGradient(s.phase, ramadan: s.ramadan) }
+            .containerBackground(for: .widget) { PrayerSky(phase: s.phase, ramadan: s.ramadan, mosqueScale: 0.5, mosqueAlign: .bottomTrailing) }
         }
     }
+    private var hexWarm: Color { Color(red: 1, green: 0.85, blue: 0.5) }
 }
 
 struct NamazWidget: Widget {
@@ -495,13 +498,13 @@ struct PanelView: View {
                 // Namaz
                 VStack(alignment: .leading, spacing: 2) {
                     Text(e.p.targetName).font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                    if let t = e.p.target { Text(t, style: .timer).font(.system(size: 22, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.6) }
+                    if let t = e.p.target { Countdown(from: e.date, to: t, size: 21) }
                     Spacer(minLength: 0)
                     PrayerProgress(s: e.p)
                     Text(e.p.city).font(.caption2).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
                 }
                 .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(skyGradient(e.p.phase, ramadan: e.p.ramadan), in: RoundedRectangle(cornerRadius: 14))
+                .background(PrayerSky(phase: e.p.phase, ramadan: e.p.ramadan, mosqueScale: 0.5).clipShape(RoundedRectangle(cornerRadius: 14)))
                 // Hava
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
