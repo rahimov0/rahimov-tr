@@ -96,6 +96,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(T("Ayarlar"))
+            .onReceive(NotificationCenter.default.publisher(for: .cityChanged)) { _ in city = Store.city }
         }
     }
 
@@ -114,6 +115,7 @@ struct SettingsView: View {
     @Published var found: City?
     @Published var busy = false
     @Published var error: String?
+    var onFound: ((City) -> Void)?
     private let m = CLLocationManager()
     override init() { super.init(); m.delegate = self; m.desiredAccuracy = kCLLocationAccuracyKilometer }
 
@@ -137,7 +139,9 @@ struct SettingsView: View {
         Task { @MainActor in
             let pm = try? await CLGeocoder().reverseGeocodeLocation(l, preferredLocale: Lang.current.locale).first
             let name = pm?.locality ?? pm?.administrativeArea ?? T("Konumun")
-            found = City(name: name, lat: (l.coordinate.latitude * 1000).rounded() / 1000, lon: (l.coordinate.longitude * 1000).rounded() / 1000)
+            let c = City(name: name, lat: (l.coordinate.latitude * 1000).rounded() / 1000, lon: (l.coordinate.longitude * 1000).rounded() / 1000)
+            found = c
+            onFound?(c)
             busy = false
         }
     }

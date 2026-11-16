@@ -1,6 +1,7 @@
 /* rahimov.tr — canlı veri metinlerinin çevirileri (site.js L()/F() ile kullanılır) */
 window.RAHIMOV_I18N = {
   en: {
+    'Geri': 'Back',
     'otomatik (telefon ayarı)': 'automatic (phone setting)', 'açık': 'light', 'koyu': 'dark', 'Tema: ': 'Theme: ',
     'Zaman aşımı (15 sn)': 'Timed out (15 s)',
     'Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.': 'Data could not be loaded right now. It will retry in a few seconds.',
@@ -53,6 +54,7 @@ window.RAHIMOV_I18N = {
     'hicri:Ramazan': 'Ramadan', 'hicri:Şevval': 'Shawwal', 'hicri:Zilkade': "Dhu al-Qa'dah", 'hicri:Zilhicce': 'Dhu al-Hijjah'
   },
   ru: {
+    'Geri': 'Назад',
     'otomatik (telefon ayarı)': 'автоматически (как в телефоне)', 'açık': 'светлая', 'koyu': 'тёмная', 'Tema: ': 'Тема: ',
     'Zaman aşımı (15 sn)': 'Превышено время ожидания (15 с)',
     'Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.': 'Не удалось загрузить данные. Повторная попытка через несколько секунд.',
@@ -108,6 +110,7 @@ window.RAHIMOV_I18N = {
     'tatil:Zafer Bayramı': 'День Победы', 'tatil:Cumhuriyet Bayramı': 'День Республики', 'tatil:Ramazan Bayramı': 'Рамазан-байрам', 'tatil:Kurban Bayramı': 'Курбан-байрам'
   },
   az: {
+    'Geri': 'Geri',
     'otomatik (telefon ayarı)': 'avtomatik (telefon ayarı)', 'açık': 'açıq', 'koyu': 'tünd', 'Tema: ': 'Mövzu: ',
     'Zaman aşımı (15 sn)': 'Vaxt bitdi (15 san)',
     'Veri şu an alınamadı. Birkaç saniye içinde yeniden denenecek.': 'Məlumat hazırda alınmadı. Bir neçə saniyədən sonra yenidən cəhd ediləcək.',

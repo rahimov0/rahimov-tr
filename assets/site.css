@@ -633,5 +633,8 @@ footer { border-top: 1px solid var(--line); padding: 48px 0 56px; margin-top: 8p
 
 /* iOS uygulaması içinde: alt sekme çubuğu menünün işini görür */
 .in-app header.nav{display:none}
-.in-app body{padding-top:env(safe-area-inset-top)}
+
+.in-app .crumbs,.in-app footer,.in-app .langsw,.in-app .skip-link{display:none!important}
+.app-back{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line,rgba(0,0,0,.08))}
+.app-back button{display:flex;align-items:center;gap:4px;font:600 16px/1 inherit;color:var(--accent,#C2410C);background:none;border:0;padding:12px 14px;cursor:pointer}
 .in-app ins.adsbygoogle{display:none!important}

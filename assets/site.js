@@ -48,6 +48,9 @@
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  /* iOS uygulaması (KROV) içinde mi? Uygulamayla mesajlaşma köprüsü */
+  var APP = /RahimovApp/.test(navigator.userAgent);
+  function appMsg(m) { try { window.webkit.messageHandlers.rahimov.postMessage(m); } catch (e) {} }
   function timed(url) {
     return new Promise(function (resolve, reject) {
       var done = false, ctl = window.AbortController ? new AbortController() : null;
@@ -127,7 +130,7 @@
   function getCity() { var c = load('rahimov.city'); return c && c.lat ? c : DEFAULT_CITY; }
   function initCity(onChange) {
     var input = $('#cityInput'), box = $('#citySuggest'), geoBtn = $('#geoBtn'), timer;
-    function pick(c) { save('rahimov.city', c); if (input) input.value = ''; if (box) box.hidden = true; onChange(c); }
+    function pick(c) { save('rahimov.city', c); appMsg({ type: 'city', city: c }); if (input) input.value = ''; if (box) box.hidden = true; onChange(c); }
     $$('.city-chip').forEach(function (b) {
       b.addEventListener('click', function () { pick({ name: b.textContent.trim(), lat: +b.dataset.lat, lon: +b.dataset.lon }); });
     });
@@ -162,13 +165,14 @@
     if (geoBtn) {
       if (!navigator.geolocation) geoBtn.hidden = true;
       geoBtn.addEventListener('click', function () {
+        if (APP) { appMsg({ type: 'locate' }); return; }
         geoBtn.disabled = true;
         locate(function () { geoBtn.disabled = false; }, function () { geoBtn.disabled = false; geoBtn.textContent = L('Konum izni verilmedi'); });
       });
     }
     onChange(getCity());
     /* İlk ziyarette bir kez konum iste; reddedilirse İstanbul kalır */
-    if (!load('rahimov.city') && !load('rahimov.geoAsked') && navigator.geolocation) {
+    if (!APP && !load('rahimov.city') && !load('rahimov.geoAsked') && navigator.geolocation) {
       save('rahimov.geoAsked', 1);
       locate();
     }
@@ -837,6 +841,23 @@
       }).join('');
     }).catch(function () { fail(body, function () { location.reload(); }); });
   }
+
+  /* Uygulamada: sekmenin kök sayfası dışındaysan üstte geri çubuğu */
+  function appBack() {
+    if (!APP) return;
+    var root = window.RAHIMOV_TAB_ROOT || '/';
+    var path = location.pathname.replace(/^\/(en|ru|az)(?=\/)/, '') || '/';
+    if (path === root) return;
+    var bar = document.createElement('div');
+    bar.className = 'app-back';
+    bar.innerHTML = '<button type="button"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' + L('Geri') + '</button>';
+    bar.firstChild.addEventListener('click', function () {
+      if (history.length > 1 && document.referrer && document.referrer.indexOf(location.host) > -1) history.back();
+      else location.href = lp(root);
+    });
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+  appBack();
 
   var pages = { home: home, doviz: doviz, altin: altin, hava: hava, deprem: deprem, namaz: namaz, kripto: kripto, tatil: tatil };
   ticker();

@@ -42,18 +42,24 @@ struct RootView: View {
     @Binding var tab: String
     @EnvironmentObject var purchases: Purchases
     var body: some View {
-        TabView(selection: $tab) {
-            WebTab(path: "/").adBanner(!purchases.removed)
+        // Seçili sekmeye tekrar dokununca sekme kendi ana sayfasına döner
+        let sel = Binding<String>(get: { tab }, set: { v in
+            if v == tab { NotificationCenter.default.post(name: .tabReselected, object: v) }
+            tab = v
+        })
+        TabView(selection: sel) {
+            WebTab(id: "panel", path: "/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Panel"), systemImage: "square.grid.2x2.fill") }.tag("panel")
-            WebTab(path: "/doviz/").adBanner(!purchases.removed)
+            WebTab(id: "doviz", path: "/doviz/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Döviz"), systemImage: "turkishlirasign.circle.fill") }.tag("doviz")
-            WebTab(path: "/hava-durumu/").adBanner(!purchases.removed)
+            WebTab(id: "hava", path: "/hava-durumu/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Hava"), systemImage: "cloud.sun.fill") }.tag("hava")
-            WebTab(path: "/namaz-vakitleri/").adBanner(!purchases.removed)
+            WebTab(id: "namaz", path: "/namaz-vakitleri/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Namaz"), systemImage: "moon.stars.fill") }.tag("namaz")
             SettingsView()
                 .tabItem { Label(T("Ayarlar"), systemImage: "gearshape.fill") }.tag("ayarlar")
         }
         .tint(Color(red: 0.76, green: 0.25, blue: 0.05))
+        .onReceive(NotificationCenter.default.publisher(for: .switchTab)) { n in if let t = n.object as? String { tab = t } }
     }
 }
