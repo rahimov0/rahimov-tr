@@ -70,8 +70,8 @@ struct WebTab: UIViewRepresentable {
         /// Sayfa yüklenmeden önce şehir ve dil tercihlerini sitenin localStorage'ına yazar.
         func stateScript() -> WKUserScript {
             let c = Store.city
-            let city = "{\"name\":\(jsonString(c.name)),\"lat\":\(c.lat),\"lon\":\(c.lon)}"
-            let js = "try{localStorage.setItem('rahimov.city',\(jsonString(city)));localStorage.setItem('rahimov.geoAsked','1');localStorage.setItem('rahimov.lang','\(Lang.current.rawValue)');}catch(e){}window.RAHIMOV_TAB_ROOT='\(path)';"
+            let city = "{\"name\":\(Self.jsonString(c.name)),\"lat\":\(c.lat),\"lon\":\(c.lon)}"
+            let js = "try{localStorage.setItem('rahimov.city',\(Self.jsonString(city)));localStorage.setItem('rahimov.geoAsked','1');localStorage.setItem('rahimov.lang','\(Lang.current.rawValue)');}catch(e){}window.RAHIMOV_TAB_ROOT='\(path)';"
             return WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         }
         static func jsonString(_ s: String) -> String {
