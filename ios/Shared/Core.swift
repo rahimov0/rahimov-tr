@@ -95,8 +95,21 @@ struct Weather: Codable {
     struct Hour: Codable { var time: String; var temp: Double; var code: Int; var pop: Int? = nil; var isDay: Bool? = nil }
     struct Day: Codable { var date: Date; var code: Int; var min: Double; var max: Double; var pop: Int }
     static let placeholder: Weather = {
-        let h = (1...6).map { i in Hour(time: String(format: "%02d:00", (Calendar.current.component(.hour, from: Date()) + i) % 24), temp: 14 + Double(i % 3), code: [2, 2, 3, 61, 3, 2][i - 1], pop: [0, 10, 30, 60, 40, 10][i - 1], isDay: true) }
-        let d = (0..<6).map { i in Day(date: Calendar.current.date(byAdding: .day, value: i, to: Calendar.current.startOfDay(for: Date()))!, code: [2, 61, 3, 1, 0, 63][i], min: 9 + Double(i), max: 16 + Double(i), pop: [10, 80, 30, 0, 0, 70][i]) }
+        let cal = Calendar.current
+        let h0 = cal.component(.hour, from: Date())
+        let hc: [Int] = [2, 2, 3, 61, 3, 2], hp: [Int] = [0, 10, 30, 60, 40, 10]
+        var h: [Hour] = []
+        for i in 0..<6 {
+            let t = String(format: "%02d:00", (h0 + i + 1) % 24)
+            h.append(Hour(time: t, temp: Double(14 + i % 3), code: hc[i], pop: hp[i], isDay: true))
+        }
+        let dc: [Int] = [2, 61, 3, 1, 0, 63], dp: [Int] = [10, 80, 30, 0, 0, 70]
+        let today = cal.startOfDay(for: Date())
+        var d: [Day] = []
+        for i in 0..<6 {
+            let dt = cal.date(byAdding: .day, value: i, to: today) ?? today
+            d.append(Day(date: dt, code: dc[i], min: Double(9 + i), max: Double(16 + i), pop: dp[i]))
+        }
         return Weather(temp: 14, code: 2, isDay: true, min: 9, max: 16, hours: h, days: d, feels: 12, pop: 10)
     }()
 }
