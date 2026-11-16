@@ -2,6 +2,8 @@ import SwiftUI
 import CoreLocation
 import WidgetKit
 import StoreKit
+import AdSupport
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var purchases: Purchases
@@ -13,6 +15,8 @@ struct SettingsView: View {
     @State private var ramadan = Notif.ramadan
     @State private var sahur = Notif.sahurBefore
     @State private var denied = false
+    @State private var taps = 0
+    @State private var adID: String?
 
     var body: some View {
         NavigationStack {
@@ -77,6 +81,18 @@ struct SettingsView: View {
                     Link(destination: URL(string: "https://rahimov.tr" + Lang.current.sitePrefix + "/gizlilik/")!) { Label(T("Gizlilik Politikası"), systemImage: "hand.raised.fill") }
                     Link(destination: URL(string: "https://rahimov.tr" + Lang.current.sitePrefix + "/iletisim/")!) { Label(T("İletişim"), systemImage: "envelope.fill") }
                     LabeledContent(T("Sürüm"), value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "")
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            // Gizli: 7 kez dokununca reklam kimliği (AdMob test cihazı eklemek için)
+                            taps += 1
+                            if taps >= 7 { taps = 0; adID = ASIdentifierManager.shared().advertisingIdentifier.uuidString }
+                        }
+                    if let id = adID {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(id.hasPrefix("00000000") ? "Reklam kimliği kapalı (izleme izni verilmemiş)." : id).font(.footnote.monospaced()).textSelection(.enabled)
+                            Button("Kopyala") { UIPasteboard.general.string = id }
+                        }
+                    }
                 }
             }
             .navigationTitle(T("Ayarlar"))
