@@ -77,7 +77,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v={TODAY}">
+<link rel="stylesheet" href="/assets/site.css?v={TODAY}b">
 </head>
 <body data-page="{page}">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">{SPRITE}{ICONS}</svg>
@@ -121,7 +121,7 @@ def layout(path, page, title, desc, body, crumbs=None, noindex=False):
     <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Buradaki fiyat, hava, deprem ve vakit bilgileri üçüncü taraf kaynaklardan alınır, bilgilendirme amaçlıdır ve gecikmeli olabilir. Yatırım tavsiyesi değildir.</p>
   </div>
 </footer>
-<script src="/assets/site.js?v={TODAY}" defer></script>
+<script src="/assets/site.js?v={TODAY}b" defer></script>
 <script>(function(){{var E=[];window.addEventListener('error',function(e){{E.push((e.message||'hata')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:''));}});
 window.addEventListener('load',function(){{setTimeout(function(){{if(!document.querySelector('.skeleton'))return;var d=document.createElement('div');
 d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#7f1d1d;color:#fff;padding:10px 12px;border-radius:10px;font:12px/1.4 sans-serif';
