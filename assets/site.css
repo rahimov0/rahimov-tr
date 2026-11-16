@@ -224,11 +224,11 @@ a.b:hover, .b-link:hover { transform: translateY(-2px); box-shadow: var(--shadow
 .b-game p { color: color-mix(in srgb, var(--t-game-ink) 72%, transparent); font-size: 15px; margin-bottom: 16px; }
 
 @media (max-width: 1024px) {
-  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "fx fx" "wx wx" "pray quake" "coin hol" "game game"; }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "wx wx" "fx fx" "pray quake" "coin hol" "game game"; }
 }
 @media (max-width: 600px) {
   :root { --gap: 12px; }
-  .bento { grid-template-areas: "fx fx" "wx wx" "pray pray" "quake quake" "coin hol" "game game"; }
+  .bento { grid-template-areas: "wx wx" "fx fx" "pray pray" "quake quake" "coin hol" "game game"; }
   .b { padding: 18px; }
   .fx-item b { font-size: 18px; }
   .wx-row .wx-ic { width: 48px; height: 48px; }
