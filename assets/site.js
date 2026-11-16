@@ -456,9 +456,22 @@
     var sm = $('#fx-sort');
     if (sm) sm.addEventListener('change', function () { var v = sm.value.split(':'); sort = v[0] || null; dir = +v[1] || 1; table(); });
 
+    /* Kaynak bazı kurları 100 kat kaydırılmış verebiliyor (ör. JPY); merkez bankası kuruyla karşılaştırıp düzelt */
+    var CHK = null, fixed = {};
+    function scaleFix() {
+      if (!CHK) return;
+      Object.keys(CHK).forEach(function (c) {
+        var x = R[c], ref = 1 / CHK[c]; if (!x || fixed[c] === x) return;
+        var k = ref / x.s, f = k > 30 && k < 300 ? 100 : k < 1 / 30 && k > 1 / 300 ? 0.01 : 1;
+        if (f !== 1) { x.b *= f; x.s *= f; }
+        fixed[c] = x;
+      });
+    }
+    getJSON('https://api.frankfurter.dev/v1/latest?base=TRY', 21600).then(function (j) { CHK = j.rates || {}; scaleFix(); convert(); majors(); table(); }).catch(function () {});
     function loadFin() {
       getJSON(API.fin, 110).then(function (j) {
         Object.keys(j).forEach(function (k) { var x = j[k]; if (x && x.Type === 'Currency' && x.Selling > 0) R[k] = { b: x.Buying, s: x.Selling, c: x.Change }; });
+        scaleFix();
         if (!from.options.length) options();
         convert(); majors(); table();
         setText('#fx-updated', stamp(j.Update_Date));
