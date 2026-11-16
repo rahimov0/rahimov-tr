@@ -30,6 +30,10 @@ jobs:
           mkdir -p ~/private_keys
           printf '%s\n' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
           grep -q "BEGIN PRIVATE KEY" ~/private_keys/AuthKey_$ASC_KEY_ID.p8 || { echo "::error::ASC_PRIVATE_KEY .p8 dosyasının tam içeriği olmalı"; exit 1; }
+      - name: Eski CI sertifikalarını temizle
+        run: |
+          pip3 install --break-system-packages -q pyjwt cryptography || pip3 install -q pyjwt cryptography
+          python3 ../.github/scripts/asc_clean_certs.py
       - name: Proje
         run: brew install xcodegen && xcodegen generate
       - name: Arşivle
