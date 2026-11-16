@@ -801,7 +801,7 @@ PAGES["/iletisim/"] = dict(page="iletisim", title="İletişim — Rahimov",
 
 # ------------------------------------------------------------------ Gizlilik
 PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahimov",
-    desc="rahimov.tr ve alt alan adlarındaki projeler için gizlilik politikası, çerezler, konum izni ve Google AdSense reklamları hakkında bilgi.",
+    desc="rahimov.tr, alt alan adlarındaki projeler ve Rahimov iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.",
     crumbs=[(None, "Gizlilik Politikası")],
     body=page_head("Gizlilik Politikası", "Son güncelleme: 16 Kasım 2026") + """
 <section class="section"><div class="wrap"><div class="prose">
@@ -835,6 +835,15 @@ PAGES["/gizlilik/"] = dict(page="gizlilik", title="Gizlilik Politikası — Rahi
     <li>Kişiselleştirilmiş reklamları <a href="https://adssettings.google.com" target="_blank" rel="noopener">Google Reklam Ayarları</a> sayfasından kapatabilirsin. Üçüncü taraf sağlayıcıların çerezlerini <a href="https://www.aboutads.info/choices" target="_blank" rel="noopener">aboutads.info</a> adresinden devre dışı bırakabilirsin.</li>
   </ul>
   <p>Google'ın verileri nasıl kullandığı hakkında daha fazla bilgi için: <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google iş ortaklarının sitelerini veya uygulamalarını kullandığınızda Google'ın verileri nasıl kullandığı</a>.</p>
+  <h2>Rahimov iOS uygulaması</h2>
+  <p>App Store'daki Rahimov uygulaması bu sitenin sayfalarını gösterir; yukarıdakilere ek olarak şunlar geçerlidir:</p>
+  <ul>
+    <li><strong>Konum:</strong> Yalnızca “Konumumu kullan” düğmesine bastığında, uygulama açıkken istenir. Yaklaşık koordinat cihazında saklanır ve hava durumu ile namaz vakitleri için Open-Meteo ve Aladhan'a gönderilir.</li>
+    <li><strong>Bildirimler:</strong> Namaz, sahur ve iftar hatırlatmaları cihazında zamanlanır; bunun için bir sunucuya bilgi gönderilmez.</li>
+    <li><strong>Widget'lar:</strong> Seçtiğin şehir ve son alınan veriler, widget'ların kullanabilmesi için cihazdaki uygulama grubunda saklanır.</li>
+    <li><strong>Reklamlar:</strong> Uygulamada Google AdMob reklamları gösterilir. AdMob; reklam göstermek, ölçmek ve kötüye kullanımı önlemek için cihaz tanımlayıcıları, IP adresi ve reklam etkileşimleri gibi bilgileri işleyebilir. Reklam tanımlayıcısı (IDFA) yalnızca uygulamanın sorduğu izleme iznini verirsen kullanılır; izni istediğin zaman Ayarlar &gt; Gizlilik ve Güvenlik &gt; İzleme bölümünden kapatabilirsin.</li>
+    <li><strong>Satın alma:</strong> “Reklamları kaldır” ödemesi Apple üzerinden yapılır; ödeme bilgilerini biz görmeyiz.</li>
+  </ul>
   <h2>Çocukların gizliliği</h2>
   <p>Bu site, bilerek 13 yaşından küçük çocuklardan kişisel bilgi toplamaz. Böyle bir bilginin toplandığını düşünüyorsan <a href="/iletisim/">İletişim</a> sayfasından ya da destek.rahimov@gmail.com adresinden ulaş, bilgiyi silelim.</p>
   <h2>Haklarınız</h2>
