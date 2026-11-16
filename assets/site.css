@@ -90,13 +90,10 @@ img.logo { object-fit: cover; }
 .nav-links a[aria-current="page"] { color: var(--on-primary); background: var(--primary); }
 .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--text-2); cursor: pointer; flex: none; }
 .icon-btn:hover { color: var(--text); border-color: var(--line-2); }
-.theme-btn .sun { display: none; }
-:root[data-theme="dark"] .theme-btn .sun { display: block; }
-:root[data-theme="dark"] .theme-btn .moon { display: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-btn .sun { display: block; }
-  :root:not([data-theme="light"]) .theme-btn .moon { display: none; }
-}
+.theme-btn .icon { display: none; }
+:root[data-mode="auto"] .theme-btn .auto, :root:not([data-mode]) .theme-btn .auto { display: block; }
+:root[data-mode="light"] .theme-btn .sun { display: block; }
+:root[data-mode="dark"] .theme-btn .moon { display: block; }
 .menu-btn { display: none; }
 @media (max-width: 1000px) {
   .menu-btn { display: grid; }

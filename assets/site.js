@@ -8,12 +8,21 @@
   /* ---------- Tema + menü ---------- */
   var root = document.documentElement;
   var themeBtn = $('#themeBtn');
-  if (themeBtn) themeBtn.addEventListener('click', function () {
-    var cur = root.getAttribute('data-theme') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    var next = cur === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme', next); } catch (e) {}
-  });
+  /* Tema: otomatik (telefon ayarı) → açık → koyu → otomatik */
+  var TLAB = { auto: 'otomatik (telefon ayarı)', light: 'açık', dark: 'koyu' };
+  function setMode(m) {
+    root.setAttribute('data-mode', m);
+    if (m === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', m);
+    try { if (m === 'auto') localStorage.removeItem('rahimov.theme'); else localStorage.setItem('rahimov.theme', m); } catch (e) {}
+    if (themeBtn) { themeBtn.setAttribute('aria-label', 'Tema: ' + TLAB[m]); themeBtn.title = 'Tema: ' + TLAB[m]; }
+  }
+  if (themeBtn) {
+    setMode(root.getAttribute('data-mode') || 'auto');
+    themeBtn.addEventListener('click', function () {
+      var m = root.getAttribute('data-mode') || 'auto', next = m === 'auto' ? 'light' : m === 'light' ? 'dark' : 'auto';
+      setMode(next); toast('Tema: ' + TLAB[next]);
+    });
+  }
   var menuBtn = $('#menuBtn'), navLinks = $('#navLinks');
   if (menuBtn) menuBtn.addEventListener('click', function () {
     var open = navLinks.classList.toggle('open');
