@@ -136,24 +136,26 @@ struct CitySearch: View {
     var onPick: (City) -> Void
     @Environment(\.dismiss) var dismiss
     @State private var q = ""
-    @State private var results: [(City, String)] = []
+    @State private var results: [Hit] = []
+    struct Hit: Identifiable { let id = UUID(); let city: City; let sub: String }
 
     var body: some View {
-        List(results, id: \.0.name) { item in
-            Button { onPick(item.0); dismiss() } label: {
-                VStack(alignment: .leading) { Text(item.0.name).foregroundStyle(.primary); Text(item.1).font(.caption).foregroundStyle(.secondary) }
+        List(results) { item in
+            Button { onPick(item.city); dismiss() } label: {
+                VStack(alignment: .leading) { Text(item.city.name).foregroundStyle(.primary); Text(item.sub).font(.caption).foregroundStyle(.secondary) }
             }
         }
         .searchable(text: $q, prompt: T("Şehir ya da ilçe"))
         .task(id: q) {
             guard q.count >= 2 else { results = []; return }
             try? await Task.sleep(nanoseconds: 300_000_000)
+            if Task.isCancelled { return }
             let u = "https://geocoding-api.open-meteo.com/v1/search?name=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&count=10&language=\(Lang.current.rawValue)"
             guard let d = try? await API.get(u), let j = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let r = j["results"] as? [[String: Any]] else { results = []; return }
             results = r.compactMap { o in
                 guard let n = o["name"] as? String, let la = (o["latitude"] as? NSNumber)?.doubleValue, let lo = (o["longitude"] as? NSNumber)?.doubleValue else { return nil }
                 let sub = [o["admin1"] as? String, o["country"] as? String].compactMap { $0 }.joined(separator: ", ")
-                return (City(name: n, lat: la, lon: lo), sub)
+                return Hit(city: City(name: n, lat: la, lon: lo), sub: sub)
             }
         }
         .navigationTitle(T("Şehir ara"))

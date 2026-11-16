@@ -103,7 +103,9 @@ struct NamazView: View {
         let s = e.s
         switch family {
         case .accessoryInline:
-            if let t = s.target { Text("\(s.targetName) \(t, style: .timer)") } else { Text(s.targetName) }
+            Group {
+                if let t = s.target { Text("\(s.targetName) \(t, style: .timer)") } else { Text(s.targetName) }
+            }.containerBackground(for: .widget) { Color.clear }
         case .accessoryCircular:
             VStack(spacing: 0) {
                 Image(systemName: s.ramadan ? "moon.stars.fill" : "moon.fill").font(.caption)
