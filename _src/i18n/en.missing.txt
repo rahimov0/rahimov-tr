@@ -1,8 +1,4 @@
-<strong>Bildirimler:</strong> Namaz, sahur ve iftar hatırlatmaları cihazında zamanlanır; bunun için bir sunucuya bilgi gönderilmez.
-<strong>Konum:</strong> Yalnızca “Konumumu kullan” düğmesine bastığında, uygulama açıkken istenir. Yaklaşık koordinat cihazında saklanır ve hava durumu ile namaz vakitleri için Open-Meteo ve Aladhan'a gönderilir.
-<strong>Reklamlar:</strong> Uygulamada Google AdMob reklamları gösterilir. AdMob; reklam göstermek, ölçmek ve kötüye kullanımı önlemek için cihaz tanımlayıcıları, IP adresi ve reklam etkileşimleri gibi bilgileri işleyebilir. Reklam tanımlayıcısı (IDFA) yalnızca uygulamanın sorduğu izleme iznini verirsen kullanılır; izni istediğin zaman Ayarlar &gt; Gizlilik ve Güvenlik &gt; İzleme bölümünden kapatabilirsin.
-<strong>Satın alma:</strong> “Reklamları kaldır” ödemesi Apple üzerinden yapılır; ödeme bilgilerini biz görmeyiz.
-<strong>Widget'lar:</strong> Seçtiğin şehir ve son alınan veriler, widget'ların kullanabilmesi için cihazdaki uygulama grubunda saklanır.
-App Store'daki Rahimov uygulaması bu sitenin sayfalarını gösterir; yukarıdakilere ek olarak şunlar geçerlidir:
-Rahimov iOS uygulaması
-rahimov.tr, alt alan adlarındaki projeler ve Rahimov iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.
+7 gün
+Gösterilecek günler
+Tüm ay
+Yakın günler

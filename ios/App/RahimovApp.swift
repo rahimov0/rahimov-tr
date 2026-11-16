@@ -12,7 +12,13 @@ struct RahimovApp: App {
         WindowGroup {
             RootView(tab: $tab)
                 .environmentObject(purchases)
-                .onOpenURL { url in if let h = url.host, ["panel", "doviz", "hava", "namaz"].contains(h) { tab = h } }
+                .onOpenURL { url in
+                    switch url.host {
+                    case "doviz": NotificationCenter.default.post(name: .switchTab, object: "piyasa:doviz")
+                    case "panel", "hava", "namaz": tab = url.host!
+                    default: break
+                    }
+                }
                 .task {
                     await purchases.start()
                     Ads.startAfterConsent()
@@ -41,25 +47,59 @@ func scheduleRefresh() {
 struct RootView: View {
     @Binding var tab: String
     @EnvironmentObject var purchases: Purchases
+    @State private var market = "doviz"
+    @State private var morePath: [String] = []
+
     var body: some View {
         // Seçili sekmeye tekrar dokununca sekme kendi ana sayfasına döner
         let sel = Binding<String>(get: { tab }, set: { v in
-            if v == tab { NotificationCenter.default.post(name: .tabReselected, object: v) }
+            if v == tab {
+                NotificationCenter.default.post(name: .tabReselected, object: v)
+                if v == "daha" { morePath = [] }
+            }
             tab = v
         })
         TabView(selection: sel) {
             WebTab(id: "panel", path: "/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Panel"), systemImage: "square.grid.2x2.fill") }.tag("panel")
-            WebTab(id: "doviz", path: "/doviz/").adBanner(!purchases.removed)
-                .tabItem { Label(T("Döviz"), systemImage: "turkishlirasign.circle.fill") }.tag("doviz")
+            MarketTab(segment: $market).adBanner(!purchases.removed)
+                .tabItem { Label(T("Piyasa"), systemImage: "chart.line.uptrend.xyaxis") }.tag("piyasa")
             WebTab(id: "hava", path: "/hava-durumu/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Hava"), systemImage: "cloud.sun.fill") }.tag("hava")
             WebTab(id: "namaz", path: "/namaz-vakitleri/").adBanner(!purchases.removed)
                 .tabItem { Label(T("Namaz"), systemImage: "moon.stars.fill") }.tag("namaz")
-            SettingsView()
-                .tabItem { Label(T("Ayarlar"), systemImage: "gearshape.fill") }.tag("ayarlar")
+            SettingsView(path: $morePath)
+                .tabItem { Label(T("Daha fazla"), systemImage: "ellipsis.circle.fill") }.tag("daha")
         }
         .tint(Color(red: 0.76, green: 0.25, blue: 0.05))
-        .onReceive(NotificationCenter.default.publisher(for: .switchTab)) { n in if let t = n.object as? String { tab = t } }
+        .onReceive(NotificationCenter.default.publisher(for: .switchTab)) { n in
+            guard let t = n.object as? String else { return }
+            let parts = t.split(separator: ":").map(String.init)
+            tab = parts[0]
+            if parts[0] == "piyasa", parts.count > 1 { market = parts[1] }
+            if parts[0] == "daha", parts.count > 1 { morePath = [parts[1]] }
+        }
+    }
+}
+
+/// Piyasa: üstte Döviz | Altın | Kripto geçişi; her biri kendi sayfasını korur
+struct MarketTab: View {
+    @Binding var segment: String
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $segment) {
+                Text(T("Döviz")).tag("doviz")
+                Text(T("Altın")).tag("altin")
+                Text(T("Kripto")).tag("kripto")
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(Color(uiColor: .systemBackground))
+            ZStack {
+                WebTab(id: "piyasa:doviz", path: "/doviz/").opacity(segment == "doviz" ? 1 : 0).allowsHitTesting(segment == "doviz")
+                WebTab(id: "piyasa:altin", path: "/altin/").opacity(segment == "altin" ? 1 : 0).allowsHitTesting(segment == "altin")
+                WebTab(id: "piyasa:kripto", path: "/kripto/").opacity(segment == "kripto" ? 1 : 0).allowsHitTesting(segment == "kripto")
+            }
+        }
     }
 }

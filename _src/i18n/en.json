@@ -514,5 +514,9 @@
 "<strong>Widget'lar:</strong> Seçtiğin şehir ve son alınan veriler, widget'ların kullanabilmesi için cihazdaki uygulama grubunda saklanır.": "<strong>Widgets:</strong> The city you choose and the latest data are stored in the app group on your device so the widgets can use them.",
 "App Store'daki KROV uygulaması bu sitenin sayfalarını gösterir; yukarıdakilere ek olarak şunlar geçerlidir:": "The KROV app on the App Store shows this site's pages; in addition to the above, the following applies:",
 "KROV iOS uygulaması": "KROV iOS app",
-"rahimov.tr, alt alan adlarındaki projeler ve KROV iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.": "Privacy policy for rahimov.tr, projects on its subdomains and the KROV iOS app: cookies, location permission, notifications, AdSense and AdMob ads."
+"rahimov.tr, alt alan adlarındaki projeler ve KROV iOS uygulaması için gizlilik politikası: çerezler, konum izni, bildirimler, AdSense ve AdMob reklamları.": "Privacy policy for rahimov.tr, projects on its subdomains and the KROV iOS app: cookies, location permission, notifications, AdSense and AdMob ads.",
+"7 gün": "7 days",
+"Gösterilecek günler": "Days to show",
+"Tüm ay": "Whole month",
+"Yakın günler": "Nearby days"
 }

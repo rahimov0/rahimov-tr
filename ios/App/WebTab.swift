@@ -10,7 +10,9 @@ extension Notification.Name {
 
 /// Sitenin sekmelere karşılık gelen sayfaları
 enum Tabs {
-    static let roots: [(id: String, path: String)] = [("panel", "/"), ("doviz", "/doviz/"), ("hava", "/hava-durumu/"), ("namaz", "/namaz-vakitleri/")]
+    static let roots: [(id: String, path: String)] = [
+        ("panel", "/"), ("piyasa:doviz", "/doviz/"), ("piyasa:altin", "/altin/"), ("piyasa:kripto", "/kripto/"),
+        ("hava", "/hava-durumu/"), ("namaz", "/namaz-vakitleri/"), ("daha:deprem", "/deprem/"), ("daha:tatil", "/resmi-tatiller/")]
     static func tab(forPath p: String) -> String? {
         var path = p
         for l in ["/en", "/ru", "/az"] where path == l || path.hasPrefix(l + "/") { path = String(path.dropFirst(3)); break }
@@ -92,7 +94,7 @@ struct WebTab: UIViewRepresentable {
         }
 
         @objc func reselected(_ n: Notification) {
-            guard (n.object as? String) == id, let web else { return }
+            guard let o = n.object as? String, o == id || id.hasPrefix(o + ":"), let web else { return }
             if web.url?.path != homeURL.path || web.scrollView.contentOffset.y < 10 { loadHome() }
             else { web.scrollView.setContentOffset(.zero, animated: true) }
         }

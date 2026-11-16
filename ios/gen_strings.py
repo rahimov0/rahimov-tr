@@ -1,5 +1,15 @@
 import json,sys
 S = {
+"Daha fazla": ("More","Ещё","Daha çox"),
+"Altın": ("Gold","Золото","Qızıl"),
+"Kripto": ("Crypto","Крипто","Kripto"),
+"Son depremler": ("Recent earthquakes","Последние землетрясения","Son zəlzələlər"),
+"Resmî tatiller": ("Public holidays","Праздники","Rəsmi bayramlar"),
+"Araçlar": ("Tools","Инструменты","Alətlər"),
+"Bugün": ("Today","Сегодня","Bu gün"),
+"Bugün yağış olasılığı %@": ("%@ chance of rain today","Вероятность дождя сегодня %@","Bu gün yağış ehtimalı %@"),
+"Hissedilen %d°": ("Feels like %d°","Ощущается как %d°","Hiss olunan %d°"),
+"Yağış %@": ("Rain %@","Осадки %@","Yağış %@"),
 "%@ vakti": ("Time for %@","Время: %@","%@ vaxtı"),
 "%@ vaktine": ("Until %@","До: %@","%@ vaxtına"),
 "%d dakika sonra %@": ("%2$@ in %1$d min","%2$@ через %1$d мин","%d dəqiqə sonra %@"),

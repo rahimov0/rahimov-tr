@@ -500,14 +500,21 @@
         var val = function (c) { var x = R[c]; return sort === 'code' ? c : sort === 's' ? x.s : sort === 'spr' ? (x.s - x.b) / x.s : x.c; };
         codes.sort(function (a, b) { var A = val(a), B = val(b); return (A > B ? 1 : A < B ? -1 : 0) * dir; });
       }
-      var rows = codes.filter(function (c) { return !q || (c + ' ' + (CNAME[c] || '')).toLocaleLowerCase('tr').indexOf(q) > -1; }).map(function (c) {
+      var shown = codes.filter(function (c) { return !q || (c + ' ' + (CNAME[c] || '')).toLocaleLowerCase('tr').indexOf(q) > -1; });
+      var total = shown.length, lim = Math.max(10, FAV.filter(function (c) { return R[c]; }).length);
+      var cut = !q && !showAll && total > lim + 2;
+      if (cut) shown = shown.slice(0, lim);
+      var rows = shown.map(function (c) {
         var x = R[c], d = dec(x.s), spr = x.s ? (x.s - x.b) / x.s * 100 : 0, on = FAV.indexOf(c) > -1;
         return '<tr data-c="' + c + '" tabindex="0"' + (c === from.value ? ' class="is-sel"' : '') + '><td><span class="cur"><button type="button" class="star" data-star="' + c + '" aria-pressed="' + on + '" aria-label="' + F(on ? '{c} favorilerden çıkar' : '{c} favorilere ekle', { c: c }) + '"><svg class="icon"><use href="#i-star"/></svg></button><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
           '<td data-l="Alış">' + nf(x.b, d) + ' ₺</td><td data-l="Satış"><b>' + nf(x.s, d) + ' ₺</b></td><td data-l="Makas">' + pc(nf(spr, 2)) + '</td><td data-l="Günlük">' + chg(x.c) + '</td></tr>';
       }).join('');
+      if (!q && total > lim + 2) rows += '<tr class="more-row"><td colspan="5"><button type="button" class="more-btn">' + (cut ? F('Tüm para birimlerini göster ({n})', { n: total }) : L('Daha az göster')) + '</button></td></tr>';
       body.innerHTML = rows || '<tr><td colspan="5" class="muted" style="text-align:center">' + L('Aramana uyan para birimi yok.') + '</td></tr>';
     }
+    var showAll = false;
     body.addEventListener('click', function (e) {
+      if (e.target.closest('.more-btn')) { var was = showAll; showAll = !showAll; table(); if (was) $('.list-head').scrollIntoView({ block: 'start' }); return; }
       var st = e.target.closest('.star'); if (st) { toggleFav(st.dataset.star); return; }
       var tr = e.target.closest('tr[data-c]'); if (tr) setFrom(tr.dataset.c);
     });
@@ -797,12 +804,33 @@
         draw(); tick = setInterval(draw, 1000);
         $('#pray-err').innerHTML = '';
       }).catch(function () { fail($('#pray-err'), function () { location.reload(); }); });
-      getJSON(API.prayMonth(c, now.getFullYear(), now.getMonth() + 1), 3600).then(function (j) {
-        $('#pray-month').innerHTML = j.data.map(function (d) {
-          var g = d.date.gregorian, today = +g.day === now.getDate();
-          return '<tr' + (today ? ' class="is-next"' : '') + '><td><b>' + +g.day + '<span class="mo"> ' + (LANG === 'tr' ? MONTHS[now.getMonth()] : '') + '</span></b></td>' + PR.map(function (p) { return '<td>' + d.timings[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
-        }).join('');
-        setText('#pray-month-title', (LANG === 'tr' || LANG === 'az' ? cap(MONTHS[now.getMonth()]) + ' ' + now.getFullYear() : cap(now.toLocaleDateString(LOC, { month: 'long', year: 'numeric' }))) + ' — ' + c.name);
+      /* Aylık tablo: varsayılan yakın günler (3 gün önce – 3 gün sonra), 7 gün ya da tüm ay */
+      var y = now.getFullYear(), m = now.getMonth(), dim = new Date(y, m + 1, 0).getDate(), d0 = now.getDate();
+      function month(yy, mm) {
+        if (mm < 0) { yy--; mm = 11; } if (mm > 11) { yy++; mm = 0; }
+        return getJSON(API.prayMonth(c, yy, mm + 1), 3600).then(function (j) {
+          return j.data.map(function (d) { var g = d.date.gregorian; return { date: new Date(+g.year, +g.month.number - 1, +g.day), t: d.timings }; });
+        }).catch(function () { return []; });
+      }
+      Promise.all([d0 <= 3 ? month(y, m - 1) : Promise.resolve([]), month(y, m), d0 > dim - 6 ? month(y, m + 1) : Promise.resolve([])]).then(function (r) {
+        var cur = r[1], all = r[0].concat(cur, r[2]), today = new Date(y, m, d0);
+        if (!cur.length) throw 0;
+        function render(mode) {
+          var list = mode === 'month' ? cur : all.filter(function (x) {
+            var k = Math.round((x.date - today) / 864e5);
+            return mode === 'week' ? k >= 0 && k < 7 : k >= -3 && k <= 3;
+          });
+          $('#pray-month').innerHTML = list.map(function (x) {
+            var isT = +x.date === +today;
+            return '<tr' + (isT ? ' class="is-next"' : '') + '><td><b>' + x.date.getDate() + '<span class="mo"> ' + (LANG === 'tr' || LANG === 'az' ? MONTHS[x.date.getMonth()] : '') + '</span></b>' + (isT ? '<span class="sub">' + L('bugün') + '</span>' : '') + '</td>' + PR.map(function (p) { return '<td>' + x.t[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
+          }).join('');
+          var mt = LANG === 'tr' || LANG === 'az' ? cap(MONTHS[m]) + ' ' + y : cap(now.toLocaleDateString(LOC, { month: 'long', year: 'numeric' }));
+          setText('#pray-month-title', (mode === 'month' ? mt : mode === 'week' ? L('Önümüzdeki 7 gün') : L('Yakın günler')) + ' — ' + c.name);
+          $$('#pm-range .seg-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.r === mode)); });
+        }
+        var mode = load('rahimov.pmRange') || 'near';
+        $$('#pm-range .seg-btn').forEach(function (b) { b.onclick = function () { mode = b.dataset.r; save('rahimov.pmRange', mode); render(mode); }; });
+        render(mode);
       }).catch(function () { $('#pray-month').innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">' + L('Aylık tablo alınamadı.') + '</td></tr>'; });
     });
   }

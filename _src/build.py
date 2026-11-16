@@ -172,7 +172,7 @@ def tool_cards(exclude=None):
 
 
 def other_tools(exclude):
-    return f'<section class="section"><div class="wrap"><div class="section-head"><h2>Diğer araçlar</h2></div><div class="grid g3">{tool_cards(exclude)}</div></div></section>'
+    return f'<section class="section web-only"><div class="wrap"><div class="section-head"><h2>Diğer araçlar</h2></div><div class="grid g3">{tool_cards(exclude)}</div></div></section>'
 
 
 CITYBAR = """<div class="citybar">
@@ -299,22 +299,22 @@ PAGES["/"] = dict(page="home", title="Rahimov — Döviz, altın, hava durumu, d
 </div>
 <div class="home-gap"></div>
 
-<section class="section" id="araclar" aria-labelledby="araclar-title"><div class="wrap">
+<section class="section web-only" id="araclar" aria-labelledby="araclar-title"><div class="wrap">
   <div class="section-head"><div><h2 id="araclar-title">Araçlar</h2><p>Hepsi ücretsiz, üyelik istemez ve telefonda rahat kullanılır.</p></div></div>
   <div class="grid g3">{tool_cards()}</div>
 </div></section>
 
-<section class="section" aria-labelledby="deprem-title"><div class="wrap">
+<section class="section web-only" aria-labelledby="deprem-title"><div class="wrap">
   <div class="section-head"><div><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste {icon('i-arrow')}</a></div>
   <div class="table-wrap"><table class="qtable"><thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead><tbody id="home-quakes"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody></table></div>
 </div></section>
 
-<section class="section" aria-labelledby="projeler-title"><div class="wrap">
+<section class="section web-only" aria-labelledby="projeler-title"><div class="wrap">
   <div class="section-head"><div><h2 id="projeler-title">Oyunlar ve projeler</h2><p>İndirmeden, tarayıcıda açılan oyunlar ve uygulamalar.</p></div><a class="more" href="/projeler/">Tüm projeler {icon('i-arrow')}</a></div>
   <div class="grid g3">{project_cards(6)}</div>
 </div></section>
 
-<section class="section"><div class="wrap">
+<section class="section web-only"><div class="wrap">
   <div class="section-head"><div><h2>Sık sorulan sorular</h2></div></div>
   {faq([
     ("Bu site ne işe yarıyor?", "Gün içinde sık sık baktığın bilgileri tek yerde topluyor: döviz ve altın fiyatları, hava durumu, son depremler, namaz vakitleri, kripto para fiyatları ve resmî tatiller. Ayrıca Kanan Rahimov'un geliştirdiği tarayıcı oyunlarına ve uygulamalara buradan ulaşabilirsin."),
@@ -609,7 +609,8 @@ PAGES["/namaz-vakitleri/"] = dict(page="namaz", title="Namaz vakitleri — İmsa
   <div class="pray-grid" id="pray-grid"></div>
   <p class="note" id="pray-next" aria-live="off" style="margin-top:16px">Vakitler yükleniyor…</p>
 
-  <h2 style="font-size:22px;line-height:28px;margin:40px 0 12px" id="pray-month-title">Aylık vakitler</h2>
+  <div class="pm-head"><h2 id="pray-month-title">Aylık vakitler</h2>
+    <div class="seg seg-sm" id="pm-range" aria-label="Gösterilecek günler"><button type="button" class="seg-btn" data-r="near" aria-pressed="true">Yakın günler</button><button type="button" class="seg-btn" data-r="week" aria-pressed="false">7 gün</button><button type="button" class="seg-btn" data-r="month" aria-pressed="false">Tüm ay</button></div></div>
   <div class="table-wrap"><table class="ptable">
     <thead><tr><th>Gün</th><th>İmsak</th><th>Güneş</th><th>Öğle</th><th>İkindi</th><th>Akşam</th><th>Yatsı</th></tr></thead>
     <tbody id="pray-month"><tr><td colspan="7" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>

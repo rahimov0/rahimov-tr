@@ -6,6 +6,7 @@ import AdSupport
 import UIKit
 
 struct SettingsView: View {
+    @Binding var path: [String]
     @EnvironmentObject var purchases: Purchases
     @StateObject private var loc = LocationFetcher()
     @State private var city = Store.city
@@ -19,8 +20,12 @@ struct SettingsView: View {
     @State private var adID: String?
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Form {
+                Section(T("Araçlar")) {
+                    NavigationLink(value: "deprem") { Label(T("Son depremler"), systemImage: "waveform.path.ecg") }
+                    NavigationLink(value: "tatil") { Label(T("Resmî tatiller"), systemImage: "calendar") }
+                }
                 Section(T("Konum")) {
                     LabeledContent(T("Şehir"), value: city.name)
                     Button { loc.request() } label: { Label(loc.busy ? T("Konum alınıyor…") : T("Konumumu kullan"), systemImage: "location.fill") }
@@ -95,7 +100,15 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle(T("Ayarlar"))
+            .navigationTitle(T("Daha fazla"))
+            .navigationDestination(for: String.self) { d in
+                Group {
+                    if d == "deprem" { WebTab(id: "daha:deprem", path: "/deprem/").navigationTitle(T("Son depremler")) }
+                    else { WebTab(id: "daha:tatil", path: "/resmi-tatiller/").navigationTitle(T("Resmî tatiller")) }
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .adBanner(!purchases.removed)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .cityChanged)) { _ in city = Store.city }
         }
     }

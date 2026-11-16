@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="/assets/site.css?v=57e90ce2" rel="stylesheet"/>
+<link href="/assets/site.css?v=04b1895f" rel="stylesheet"/>
 </head>
 <body data-page="namaz">
 <svg aria-hidden="true" focusable="false" height="0" style="position:absolute" width="0"><defs>
@@ -131,7 +131,8 @@
 <p class="pray-meta"><b><span id="pray-city">—</span> · <span id="pray-date"></span></b><span id="pray-hijri"></span></p>
 <div class="pray-grid" id="pray-grid"></div>
 <p aria-live="off" class="note" id="pray-next" style="margin-top:16px">Vaxtlar yüklənir…</p>
-<h2 id="pray-month-title" style="font-size:22px;line-height:28px;margin:40px 0 12px">Aylıq vaxtlar</h2>
+<div class="pm-head"><h2 id="pray-month-title">Aylıq vaxtlar</h2>
+<div aria-label="Göstəriləcək günlər" class="seg seg-sm" id="pm-range"><button aria-pressed="true" class="seg-btn" data-r="near" type="button">Yaxın günlər</button><button aria-pressed="false" class="seg-btn" data-r="week" type="button">7 gün</button><button aria-pressed="false" class="seg-btn" data-r="month" type="button">Bütün ay</button></div></div>
 <div class="table-wrap"><table class="ptable">
 <thead><tr><th>Gün</th><th>İmsak</th><th>Günəş</th><th>Günorta</th><th>İkindi</th><th>Axşam</th><th>Yatsı</th></tr></thead>
 <tbody id="pray-month"><tr><td class="muted" colspan="7" style="text-align:center">Yüklənir…</td></tr></tbody>
@@ -155,7 +156,7 @@
 <h2>Tez-tez verilən suallar</h2>
 </div>
 <div class="faq"><details><summary>Rayonum üçün ayrıca vaxt görə bilərəmmi? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Bəli. Axtarış qutusuna rayonun adını yaz və siyahıdan seç. Vaxtlar seçdiyin yerin koordinatına görə hesablanır.</p></details><details><summary>Geri sayım nəyə görə işləyir? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Cihazının saatına görə işləyir. Fərqli saat qurşağındakı şəhəri seçmisənsə geri sayım düzgün olmaya bilər; vaxtların özü isə həmin şəhərin yerli vaxtı ilədir.</p></details><details><summary>Diyanət təqvimi ilə niyə bir neçə dəqiqə fərq var? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Diyanət hesablanmış vaxtlara ehtiyat payı əlavə edir və öz koordinat siyahısından istifadə edir. Bu səhifə eyni bucaq dəyərlərini istifadə edir, amma ehtiyat paylarını nəzərə almaya bilər.</p></details><details><summary>Məlumat mənbəyi nədir? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Vaxtlar Aladhan xidmətindən, Diyanət İşləri Başqanlığının üsulu seçilərək alınır.</p></details></div>
-</div></section><section class="section"><div class="wrap"><div class="section-head"><h2>Digər alətlər</h2></div><div class="grid g3"><a class="card tool" data-tone="fx" href="/az/doviz/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-fx"></use></svg></span><div><h3>Valyuta məzənnələri</h3><p>Dollar, avro və 60-dan çox valyuta; alarkən və ya satarkən hesablayan çevirici və 1 illik qrafik.</p></div></a><a class="card tool" data-tone="coin" href="/az/altin/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-gold"></use></svg></span><div><h3>Qızıl qiymətləri</h3><p>Qram, çəyrək, Cümhuriyyət, beşli qızıl qiymətləri; əlindəki bütün qızılın dəyərini hesabla.</p></div></a><a class="card tool" data-tone="wx" href="/az/hava-durumu/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-wx"></use></svg></span><div><h3>Hava</h3><p>Şəhərini axtar; cari temperatur, saatlıq proqnoz və 7 günlük hava.</p></div></a><a class="card tool" data-tone="quake" href="/az/deprem/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-quake"></use></svg></span><div><h3>Son zəlzələlər</h3><p>Kandilli Rəsədxanasının məlumatları ilə Türkiyə və ətrafında son 100 zəlzələ.</p></div></a><a class="card tool" data-tone="coin" href="/az/kripto/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-coin"></use></svg></span><div><h3>Kriptovalyuta qiymətləri</h3><p>Bitcoin, Ethereum və digər böyük kriptovalyutaların dollar və lirə qiyməti.</p></div></a><a class="card tool" data-tone="hol" href="/az/resmi-tatiller/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-cal"></use></svg></span><div><h3>Rəsmi bayramlar</h3><p>Bu ilin və gələn ilin rəsmi bayram günləri, növbəti bayrama qalan gün sayı.</p></div></a></div></div></section>
+</div></section><section class="section web-only"><div class="wrap"><div class="section-head"><h2>Digər alətlər</h2></div><div class="grid g3"><a class="card tool" data-tone="fx" href="/az/doviz/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-fx"></use></svg></span><div><h3>Valyuta məzənnələri</h3><p>Dollar, avro və 60-dan çox valyuta; alarkən və ya satarkən hesablayan çevirici və 1 illik qrafik.</p></div></a><a class="card tool" data-tone="coin" href="/az/altin/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-gold"></use></svg></span><div><h3>Qızıl qiymətləri</h3><p>Qram, çəyrək, Cümhuriyyət, beşli qızıl qiymətləri; əlindəki bütün qızılın dəyərini hesabla.</p></div></a><a class="card tool" data-tone="wx" href="/az/hava-durumu/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-wx"></use></svg></span><div><h3>Hava</h3><p>Şəhərini axtar; cari temperatur, saatlıq proqnoz və 7 günlük hava.</p></div></a><a class="card tool" data-tone="quake" href="/az/deprem/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-quake"></use></svg></span><div><h3>Son zəlzələlər</h3><p>Kandilli Rəsədxanasının məlumatları ilə Türkiyə və ətrafında son 100 zəlzələ.</p></div></a><a class="card tool" data-tone="coin" href="/az/kripto/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-coin"></use></svg></span><div><h3>Kriptovalyuta qiymətləri</h3><p>Bitcoin, Ethereum və digər böyük kriptovalyutaların dollar və lirə qiyməti.</p></div></a><a class="card tool" data-tone="hol" href="/az/resmi-tatiller/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-cal"></use></svg></span><div><h3>Rəsmi bayramlar</h3><p>Bu ilin və gələn ilin rəsmi bayram günləri, növbəti bayrama qalan gün sayı.</p></div></a></div></div></section>
 </main>
 <footer>
 <div class="wrap">
@@ -181,8 +182,8 @@
 <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Buradakı qiymət, hava, zəlzələ və namaz vaxtı məlumatları üçüncü tərəf mənbələrdən alınır, məlumat xarakteri daşıyır və gecikə bilər. İnvestisiya tövsiyəsi deyil.</p>
 </div>
 </footer>
-<script defer="" src="/assets/i18n.js?v=18d4beaf"></script>
-<script defer="" src="/assets/site.js?v=ccb72375"></script>
+<script defer="" src="/assets/i18n.js?v=11ccbe7e"></script>
+<script defer="" src="/assets/site.js?v=deff7210"></script>
 <script>(function(){var E=[];window.addEventListener('error',function(e){E.push((e.message||'hata')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:''));});
 window.addEventListener('load',function(){setTimeout(function(){if(!document.querySelector('.skeleton'))return;var d=document.createElement('div');
 d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#7f1d1d;color:#fff;padding:10px 12px;border-radius:10px;font:12px/1.4 sans-serif';

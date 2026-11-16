@@ -33,7 +33,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="/assets/site.css?v=57e90ce2" rel="stylesheet"/>
+<link href="/assets/site.css?v=04b1895f" rel="stylesheet"/>
 </head>
 <body data-page="namaz">
 <svg aria-hidden="true" focusable="false" height="0" style="position:absolute" width="0"><defs>
@@ -131,7 +131,8 @@
 <p class="pray-meta"><b><span id="pray-city">—</span> · <span id="pray-date"></span></b><span id="pray-hijri"></span></p>
 <div class="pray-grid" id="pray-grid"></div>
 <p aria-live="off" class="note" id="pray-next" style="margin-top:16px">Loading times…</p>
-<h2 id="pray-month-title" style="font-size:22px;line-height:28px;margin:40px 0 12px">Monthly times</h2>
+<div class="pm-head"><h2 id="pray-month-title">Monthly times</h2>
+<div aria-label="Days to show" class="seg seg-sm" id="pm-range"><button aria-pressed="true" class="seg-btn" data-r="near" type="button">Nearby days</button><button aria-pressed="false" class="seg-btn" data-r="week" type="button">7 days</button><button aria-pressed="false" class="seg-btn" data-r="month" type="button">Whole month</button></div></div>
 <div class="table-wrap"><table class="ptable">
 <thead><tr><th>Day</th><th>Imsak</th><th>Sunrise</th><th>Dhuhr</th><th>Asr</th><th>Maghrib</th><th>Isha</th></tr></thead>
 <tbody id="pray-month"><tr><td class="muted" colspan="7" style="text-align:center">Loading…</td></tr></tbody>
@@ -155,7 +156,7 @@
 <h2>Frequently asked questions</h2>
 </div>
 <div class="faq"><details><summary>Can I see times for my district? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Yes. Type the district's name into the search box and pick it from the list. Times are calculated for the coordinates of the place you choose.</p></details><details><summary>What does the countdown run on? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>It works by your device's clock. If you chose a city in a different time zone, the countdown may be off; the prayer times themselves are in that city's local time.</p></details><details><summary>Why is there a few minutes' difference from the Diyanet calendar? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Diyanet adds a safety margin to the calculated times and uses its own list of coordinates. This page uses the same angles but may not include the safety margins.</p></details><details><summary>What is the data source? <svg aria-hidden="true" class="icon"><use href="#i-plus"></use></svg></summary><p>Times come from the Aladhan service with the Diyanet method selected.</p></details></div>
-</div></section><section class="section"><div class="wrap"><div class="section-head"><h2>Other tools</h2></div><div class="grid g3"><a class="card tool" data-tone="fx" href="/en/doviz/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-fx"></use></svg></span><div><h3>Exchange rates</h3><p>The dollar, the euro and more than 60 currencies; a converter that works out buying and selling amounts, plus a one-year chart.</p></div></a><a class="card tool" data-tone="coin" href="/en/altin/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-gold"></use></svg></span><div><h3>Gold prices</h3><p>Gram, quarter, Republic and five-coin gold prices; work out what all your gold is worth.</p></div></a><a class="card tool" data-tone="wx" href="/en/hava-durumu/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-wx"></use></svg></span><div><h3>Weather</h3><p>Search your city; current temperature, hourly forecast and 7-day weather.</p></div></a><a class="card tool" data-tone="quake" href="/en/deprem/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-quake"></use></svg></span><div><h3>Recent earthquakes</h3><p>The latest 100 earthquakes in and around Turkey, from Kandilli Observatory data.</p></div></a><a class="card tool" data-tone="coin" href="/en/kripto/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-coin"></use></svg></span><div><h3>Cryptocurrency prices</h3><p>Dollar and lira prices of Bitcoin, Ethereum and other major cryptocurrencies.</p></div></a><a class="card tool" data-tone="hol" href="/en/resmi-tatiller/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-cal"></use></svg></span><div><h3>Public holidays</h3><p>This year's and next year's public holidays, and how many days until the next one.</p></div></a></div></div></section>
+</div></section><section class="section web-only"><div class="wrap"><div class="section-head"><h2>Other tools</h2></div><div class="grid g3"><a class="card tool" data-tone="fx" href="/en/doviz/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-fx"></use></svg></span><div><h3>Exchange rates</h3><p>The dollar, the euro and more than 60 currencies; a converter that works out buying and selling amounts, plus a one-year chart.</p></div></a><a class="card tool" data-tone="coin" href="/en/altin/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-gold"></use></svg></span><div><h3>Gold prices</h3><p>Gram, quarter, Republic and five-coin gold prices; work out what all your gold is worth.</p></div></a><a class="card tool" data-tone="wx" href="/en/hava-durumu/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-wx"></use></svg></span><div><h3>Weather</h3><p>Search your city; current temperature, hourly forecast and 7-day weather.</p></div></a><a class="card tool" data-tone="quake" href="/en/deprem/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-quake"></use></svg></span><div><h3>Recent earthquakes</h3><p>The latest 100 earthquakes in and around Turkey, from Kandilli Observatory data.</p></div></a><a class="card tool" data-tone="coin" href="/en/kripto/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-coin"></use></svg></span><div><h3>Cryptocurrency prices</h3><p>Dollar and lira prices of Bitcoin, Ethereum and other major cryptocurrencies.</p></div></a><a class="card tool" data-tone="hol" href="/en/resmi-tatiller/"><span class="tool-ic"><svg aria-hidden="true" class="icon"><use href="#i-cal"></use></svg></span><div><h3>Public holidays</h3><p>This year's and next year's public holidays, and how many days until the next one.</p></div></a></div></div></section>
 </main>
 <footer>
 <div class="wrap">
@@ -181,8 +182,8 @@
 <p class="foot-bottom">© 2026 Kanan Rahimov · rahimov.tr — Price, weather, earthquake and prayer time information here comes from third-party sources, is for information only and may be delayed. It is not investment advice.</p>
 </div>
 </footer>
-<script defer="" src="/assets/i18n.js?v=18d4beaf"></script>
-<script defer="" src="/assets/site.js?v=ccb72375"></script>
+<script defer="" src="/assets/i18n.js?v=11ccbe7e"></script>
+<script defer="" src="/assets/site.js?v=deff7210"></script>
 <script>(function(){var E=[];window.addEventListener('error',function(e){E.push((e.message||'hata')+(e.filename?' @'+e.filename.split('/').pop()+':'+e.lineno:''));});
 window.addEventListener('load',function(){setTimeout(function(){if(!document.querySelector('.skeleton'))return;var d=document.createElement('div');
 d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#7f1d1d;color:#fff;padding:10px 12px;border-radius:10px;font:12px/1.4 sans-serif';
