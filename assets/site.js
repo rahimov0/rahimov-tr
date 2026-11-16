@@ -318,7 +318,6 @@
   /* ---------- Döviz ---------- */
   var CNAME = { TRY: 'Türk Lirası', USD: 'ABD Doları', EUR: 'Euro', GBP: 'İngiliz Sterlini', CHF: 'İsviçre Frangı', CAD: 'Kanada Doları', RUB: 'Rus Rublesi', AED: 'BAE Dirhemi', AUD: 'Avustralya Doları', DKK: 'Danimarka Kronu', SEK: 'İsveç Kronu', NOK: 'Norveç Kronu', JPY: 'Japon Yeni', KWD: 'Kuveyt Dinarı', ZAR: 'Güney Afrika Randı', BHD: 'Bahreyn Dinarı', LYD: 'Libya Dinarı', SAR: 'Suudi Riyali', IQD: 'Irak Dinarı', ILS: 'İsrail Şekeli', INR: 'Hindistan Rupisi', MXN: 'Meksika Pesosu', HUF: 'Macar Forinti', NZD: 'Yeni Zelanda Doları', BRL: 'Brezilya Reali', IDR: 'Endonezya Rupisi', CZK: 'Çek Korunası', PLN: 'Polonya Zlotisi', RON: 'Rumen Leyi', CNY: 'Çin Yuanı', ARS: 'Arjantin Pesosu', ALL: 'Arnavut Leki', AZN: 'Azerbaycan Manatı', BAM: 'Bosna-Hersek Markı', CLP: 'Şili Pesosu', COP: 'Kolombiya Pesosu', CRC: 'Kosta Rika Kolonu', DZD: 'Cezayir Dinarı', EGP: 'Mısır Lirası', HKD: 'Hong Kong Doları', ISK: 'İzlanda Kronu', KRW: 'Güney Kore Wonu', KZT: 'Kazakistan Tengesi', LBP: 'Lübnan Lirası', LKR: 'Sri Lanka Rupisi', MAD: 'Fas Dirhemi', MDL: 'Moldova Leyi', MKD: 'Makedon Dinarı', MYR: 'Malezya Ringgiti', OMR: 'Umman Riyali', PEN: 'Peru Solü', PHP: 'Filipin Pesosu', PKR: 'Pakistan Rupisi', QAR: 'Katar Riyali', RSD: 'Sırp Dinarı', SGD: 'Singapur Doları', SYP: 'Suriye Lirası', THB: 'Tayland Bahtı', TWD: 'Tayvan Doları', UAH: 'Ukrayna Grivnası', UYU: 'Uruguay Pesosu', GEL: 'Gürcü Larisi', TND: 'Tunus Dinarı', BGN: 'Bulgar Levası', VND: 'Vietnam Dongu' };
   var FX_FIRST = ['USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AED', 'AZN', 'RUB', 'JPY', 'CNY', 'CAD', 'AUD', 'KWD', 'QAR', 'GEL', 'BGN', 'RON', 'PLN', 'SEK', 'NOK', 'DKK'];
-  var MAJORS = ['USD', 'EUR', 'GBP', 'CHF'];
   var TRMON = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
   function flag(c) { return 'https://flagcdn.com/' + (c === 'EUR' ? 'eu' : c.slice(0, 2).toLowerCase()) + '.svg'; }
   function dec(v) { return v >= 100 ? 2 : v >= 1 ? 4 : 6; }
@@ -332,18 +331,32 @@
     var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
     return v.map(function (y, i) { return (i ? 'L' : 'M') + (i / (v.length - 1) * w).toFixed(1) + ' ' + (h - pad - (y - mn) / sp * (h - pad * 2)).toFixed(1); }).join('');
   }
-  /* Frankfurter: TRY bazlı tek istek, tersine çevrilip TL karşılığı yapılır */
-  function fxHistory() {
+  /* Frankfurter (merkez bankası) geçmişi olan para birimleri */
+  var FRANK = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'AUD', 'CAD', 'CNY', 'DKK', 'SEK', 'NOK', 'PLN', 'RON', 'BGN', 'CZK', 'HUF', 'ISK', 'NZD', 'SGD', 'HKD', 'KRW', 'INR', 'IDR', 'ILS', 'MXN', 'MYR', 'PHP', 'THB', 'ZAR', 'BRL'];
+  var FAV_MAX = 4, FAV_DEF = ['USD', 'EUR', 'GBP', 'CHF'];
+  function fxHistory(codes) {
+    codes = codes.filter(function (c) { return FRANK.indexOf(c) > -1; });
+    if (!codes.length) return Promise.resolve({ days: [] });
     var d = new Date(); d.setDate(d.getDate() - 372);
     var start = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    return getJSON('https://api.frankfurter.dev/v1/' + start + '..?base=TRY&symbols=' + MAJORS.join(','), 21600).then(function (j) {
+    return getJSON('https://api.frankfurter.dev/v1/' + start + '..?base=TRY&symbols=' + codes.slice().sort().join(','), 21600).then(function (j) {
       var days = Object.keys(j.rates || {}).sort(), out = { days: days };
-      MAJORS.forEach(function (c) { out[c] = days.map(function (k) { var r = j.rates[k][c]; return r ? 1 / r : null; }); });
+      codes.forEach(function (c) { out[c] = days.map(function (k) { var r = j.rates[k][c]; return r ? 1 / r : null; }); });
       return out;
     });
   }
+  var toastT;
+  function toast(msg) {
+    var el = $('#toast');
+    if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 3500);
+  }
+  function short(c) { return ({ USD: 'Dolar', EUR: 'Euro', GBP: 'Sterlin', CHF: 'Frank' })[c] || CNAME[c] || c; }
   function doviz() {
-    var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = null, chCur = 'USD', chDays = 90;
+    var R = { TRY: { b: 1, s: 1, c: 0 } }, mode = 'mid', hist = { days: [] }, chDays = 90, editing = false, sort = null, dir = 1;
+    var FAV = load('rahimov.fxfav'); if (!FAV || !FAV.length) FAV = FAV_DEF.slice();
+    var chCur = FAV.filter(function (c) { return FRANK.indexOf(c) > -1; })[0] || 'USD';
     var amt = $('#fx-amt'), from = $('#fx-from'), to = $('#fx-to'), res = $('#fx-res'), body = $('#fx-body'), search = $('#fx-search');
     function rate(c) { var x = R[c]; if (!x) return NaN; return mode === 'sell' ? x.s : mode === 'buy' ? x.b : (x.b + x.s) / 2; }
     function convert() {
@@ -352,50 +365,107 @@
       var a = parseAmt(amt.value), r = rate(from.value) / rate(to.value);
       if (isNaN(a) || isNaN(r)) { res.textContent = '—'; return; }
       var v = a * r;
-      res.textContent = nf(v, v >= 1000 ? 2 : v >= 1 ? 2 : 4);
+      res.textContent = nf(v, v >= 1 ? 2 : 4);
       res.style.fontSize = res.textContent.length > 12 ? '30px' : '';
       setText('#cv-rate', '1 ' + from.value + ' = ' + nf(r, dec(r)) + ' ' + to.value);
+      $$('#fx-body tr[data-c]').forEach(function (tr) { tr.classList.toggle('is-sel', tr.dataset.c === from.value); });
     }
+    function codesAll() { return FX_FIRST.filter(function (c) { return R[c]; }).concat(Object.keys(R).filter(function (c) { return c !== 'TRY' && FX_FIRST.indexOf(c) < 0; }).sort()); }
     function options() {
-      var codes = ['TRY'].concat(FX_FIRST.filter(function (c) { return R[c]; }), Object.keys(R).filter(function (c) { return c !== 'TRY' && FX_FIRST.indexOf(c) < 0; }).sort());
-      var html = codes.map(function (c) { return '<option value="' + c + '">' + c + ' · ' + (CNAME[c] || c) + '</option>'; }).join('');
+      var html = ['TRY'].concat(codesAll()).map(function (c) { return '<option value="' + c + '">' + c + ' · ' + (CNAME[c] || c) + '</option>'; }).join('');
       var f = from.value || 'USD', t = to.value || 'TRY';
       from.innerHTML = html; to.innerHTML = html; from.value = f; to.value = t;
     }
     function setFrom(c) { from.value = c; if (to.value === c) to.value = 'TRY'; convert(); $('#conv').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+    /* ---- favoriler ---- */
+    function saveFav() { save('rahimov.fxfav', FAV); }
+    function toggleFav(c) {
+      var i = FAV.indexOf(c);
+      if (i > -1) { FAV.splice(i, 1); toast(c + ' favorilerden çıkarıldı.'); }
+      else if (FAV.length >= FAV_MAX) { toast('En fazla ' + FAV_MAX + ' favori seçebilirsin. Önce birini çıkar.'); return; }
+      else { FAV.push(c); toast(c + ' favorilere eklendi.'); }
+      saveFav(); refreshFav();
+    }
+    function refreshFav() {
+      majors(); table(); chips();
+      var need = FAV.filter(function (c) { return FRANK.indexOf(c) > -1 && !hist[c]; });
+      if (need.length) fxHistory(FAV).then(function (h) { hist = h; majors(); chips(); draw(); }).catch(function () {});
+    }
     function majors() {
       var el = $('#fx-majors'); if (!el) return;
-      el.innerHTML = MAJORS.filter(function (c) { return R[c]; }).map(function (c) {
-        var x = R[c], sv = hist && hist[c] ? hist[c].filter(Boolean).slice(-30) : null;
-        return '<button type="button" class="b major" data-c="' + c + '"><span class="mj-top"><img src="' + flag(c) + '" alt="" width="22" height="22"><b>' + c + '</b><span class="muted">' + CNAME[c] + '</span></span>' +
-          '<span class="mj-val num">' + nf(x.s, 4) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· alış ' + nf(x.b, 4) + '</span></span>' +
-          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '') + '</button>';
+      setText('#fav-count', FAV.length + '/' + FAV_MAX);
+      var html = FAV.filter(function (c) { return R[c]; }).map(function (c) {
+        var x = R[c], sv = hist[c] ? hist[c].filter(Boolean).slice(-30) : null;
+        return '<div class="b major" data-c="' + c + '" role="button" tabindex="0" aria-label="' + c + ' çeviriciye al">' +
+          '<span class="mj-top"><img src="' + flag(c) + '" alt="" width="22" height="22"><b>' + c + '</b><span class="muted">' + (CNAME[c] || '') + '</span></span>' +
+          '<span class="mj-val num">' + nf(x.s, dec(x.s)) + ' ₺</span><span class="mj-sub">' + chg(x.c) + ' <span class="muted">· alış ' + nf(x.b, dec(x.b)) + '</span></span>' +
+          (sv && sv.length > 2 ? '<svg class="mj-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="' + sparkPath(sv, 120, 32, 3) + '"/></svg>' : '<span class="mj-nochart">Geçmiş grafiği yok</span>') +
+          (editing ? '<button type="button" class="mj-del" data-del="' + c + '" aria-label="' + c + ' favorilerden çıkar"><svg class="icon"><use href="#i-x"/></svg></button>' : '') + '</div>';
       }).join('');
-      $$('.major', el).forEach(function (b) { b.addEventListener('click', function () { setFrom(b.dataset.c); }); });
+      for (var k = FAV.length; k < FAV_MAX; k++) {
+        html += '<label class="b major mj-empty"><svg class="icon"><use href="#i-plus"/></svg><span>Para birimi ekle</span><select class="mj-pick" aria-label="Favorilere para birimi ekle"><option value="">Seç…</option>' +
+          codesAll().filter(function (c) { return FAV.indexOf(c) < 0; }).map(function (c) { return '<option value="' + c + '">' + c + ' · ' + (CNAME[c] || '') + '</option>'; }).join('') + '</select></label>';
+      }
+      el.innerHTML = html;
+      el.classList.toggle('editing', editing);
+      $$('.major[data-c]', el).forEach(function (b) {
+        b.addEventListener('click', function (e) { if (e.target.closest('.mj-del')) return; if (!editing) setFrom(b.dataset.c); });
+        b.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !editing) setFrom(b.dataset.c); });
+      });
+      $$('.mj-del', el).forEach(function (b) { b.addEventListener('click', function () { toggleFav(b.dataset.del); }); });
+      $$('.mj-pick', el).forEach(function (s) { s.addEventListener('change', function () { if (s.value) toggleFav(s.value); }); });
     }
+    var favEdit = $('#fav-edit');
+    favEdit.addEventListener('click', function () {
+      editing = !editing; favEdit.setAttribute('aria-pressed', String(editing));
+      favEdit.lastChild.textContent = editing ? 'Bitti' : 'Düzenle';
+      $('#fav-hint').hidden = !editing; majors();
+    });
+
+    /* ---- tablo ---- */
     function table() {
       var q = search.value.trim().toLocaleLowerCase('tr');
-      var codes = FX_FIRST.filter(function (c) { return R[c]; }).concat(Object.keys(R).filter(function (c) { return c !== 'TRY' && FX_FIRST.indexOf(c) < 0; }).sort());
+      var codes = codesAll();
+      codes = FAV.filter(function (c) { return R[c]; }).concat(codes.filter(function (c) { return FAV.indexOf(c) < 0; }));
+      if (sort) {
+        var val = function (c) { var x = R[c]; return sort === 'code' ? c : sort === 's' ? x.s : sort === 'spr' ? (x.s - x.b) / x.s : x.c; };
+        codes.sort(function (a, b) { var A = val(a), B = val(b); return (A > B ? 1 : A < B ? -1 : 0) * dir; });
+      }
       var rows = codes.filter(function (c) { return !q || (c + ' ' + (CNAME[c] || '')).toLocaleLowerCase('tr').indexOf(q) > -1; }).map(function (c) {
-        var x = R[c], d = dec(x.s), spr = x.s ? (x.s - x.b) / x.s * 100 : 0;
-        return '<tr data-c="' + c + '" tabindex="0"><td><span class="cur"><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
+        var x = R[c], d = dec(x.s), spr = x.s ? (x.s - x.b) / x.s * 100 : 0, on = FAV.indexOf(c) > -1;
+        return '<tr data-c="' + c + '" tabindex="0"' + (c === from.value ? ' class="is-sel"' : '') + '><td><span class="cur"><button type="button" class="star" data-star="' + c + '" aria-pressed="' + on + '" aria-label="' + c + (on ? ' favorilerden çıkar' : ' favorilere ekle') + '"><svg class="icon"><use href="#i-star"/></svg></button><img src="' + flag(c) + '" alt="" width="22" height="22" loading="lazy"><span><b>' + c + '</b><span class="sub">' + (CNAME[c] || '') + '</span></span></span></td>' +
           '<td data-l="Alış">' + nf(x.b, d) + ' ₺</td><td data-l="Satış"><b>' + nf(x.s, d) + ' ₺</b></td><td data-l="Makas">%' + nf(spr, 2) + '</td><td data-l="Günlük">' + chg(x.c) + '</td></tr>';
       }).join('');
       body.innerHTML = rows || '<tr><td colspan="5" class="muted" style="text-align:center">Aramana uyan para birimi yok.</td></tr>';
     }
-    body.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-c]'); if (tr) setFrom(tr.dataset.c); });
-    body.addEventListener('keydown', function (e) { var tr = e.target.closest('tr[data-c]'); if (tr && e.key === 'Enter') setFrom(tr.dataset.c); });
+    body.addEventListener('click', function (e) {
+      var st = e.target.closest('.star'); if (st) { toggleFav(st.dataset.star); return; }
+      var tr = e.target.closest('tr[data-c]'); if (tr) setFrom(tr.dataset.c);
+    });
+    body.addEventListener('keydown', function (e) { var tr = e.target.closest('tr[data-c]'); if (tr && e.key === 'Enter' && !e.target.closest('.star')) setFrom(tr.dataset.c); });
     search.addEventListener('input', table);
-    function load() {
+    $$('.th-sort').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var k = b.dataset.sort;
+        if (sort === k) { if (dir === -1) { sort = null; dir = 1; } else dir = -1; } else { sort = k; dir = k === 'code' ? 1 : -1; }
+        $$('.th-sort').forEach(function (x) { x.parentNode.setAttribute('aria-sort', x.dataset.sort === sort ? (dir === 1 ? 'ascending' : 'descending') : 'none'); });
+        table();
+      });
+    });
+    var sm = $('#fx-sort');
+    if (sm) sm.addEventListener('change', function () { var v = sm.value.split(':'); sort = v[0] || null; dir = +v[1] || 1; table(); });
+
+    function loadFin() {
       getJSON(API.fin, 110).then(function (j) {
         Object.keys(j).forEach(function (k) { var x = j[k]; if (x && x.Type === 'Currency' && x.Selling > 0) R[k] = { b: x.Buying, s: x.Selling, c: x.Change }; });
         if (!from.options.length) options();
         convert(); majors(); table();
         setText('#fx-updated', stamp(j.Update_Date));
-      }).catch(function () { fail(body.closest('.table-wrap'), load); setText('#fx-updated', 'Veri alınamadı'); });
+      }).catch(function () { fail(body.closest('.table-wrap'), loadFin); setText('#fx-updated', 'Veri alınamadı'); });
     }
-    /* çevirici olayları */
     amt.addEventListener('input', convert);
+    amt.addEventListener('focus', function () { amt.select(); });
     from.addEventListener('change', convert); to.addEventListener('change', convert);
     $('#fx-swap').addEventListener('click', function () { var t = from.value; from.value = to.value; to.value = t; convert(); });
     $$('.quick button').forEach(function (b) { b.addEventListener('click', function () { amt.value = nf(+b.dataset.v, 0); convert(); }); });
@@ -407,11 +477,20 @@
         convert();
       });
     });
-    /* grafik */
-    var box = $('#ch-box'), svg = $('#fx-chart'), tip = $('#ch-tip'), cur = null;
+
+    /* ---- grafik: üzerinde gezinince değer başlığa yazılır ---- */
+    var box = $('#ch-box'), svg = $('#fx-chart'), cur = null, baseStats = '';
+    function chips() {
+      var list = FAV.filter(function (c) { return FRANK.indexOf(c) > -1; });
+      if (list.indexOf(chCur) < 0) chCur = list[0] || 'USD';
+      if (!list.length) list = ['USD'];
+      setHTML('#ch-cur', list.map(function (c) { return '<button type="button" class="seg-btn" data-c="' + c + '" aria-pressed="' + (c === chCur) + '">' + c + '</button>'; }).join(''));
+      $$('#ch-cur .seg-btn').forEach(function (b) { b.addEventListener('click', function () { chCur = b.dataset.c; chips(); if (!hist[chCur]) fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); }); else draw(); }); });
+    }
     function draw() {
-      if (!hist) return;
-      var days = hist.days, vals = hist[chCur], pts = [];
+      var vals = hist[chCur], days = hist.days, pts = [];
+      setText('#ch-name', short(chCur));
+      if (!vals) { svg.innerHTML = ''; return; }
       var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - chDays);
       days.forEach(function (d, i) { if (vals[i] && new Date(d) >= cutoff) pts.push([d, vals[i]]); });
       if (pts.length < 2) return;
@@ -419,17 +498,17 @@
       var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), sp = (mx - mn) || 1;
       var X = function (i) { return i / (pts.length - 1) * W; }, Y = function (y) { return H - 24 - (y - mn) / sp * (H - 24 - P * 2) - P; };
       var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p[1]).toFixed(1); }).join('');
-      var up = v[v.length - 1] >= v[0];
+      var up = v[v.length - 1] >= v[0], dd = dec(mx);
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       var lab = function (d) { var x = new Date(d); return x.getDate() + ' ' + TRMON[x.getMonth()] + (chDays > 200 ? ' ' + String(x.getFullYear()).slice(2) : ''); };
       svg.innerHTML = '<line x1="0" x2="' + W + '" y1="' + Y(mx) + '" y2="' + Y(mx) + '" stroke-dasharray="3 4"/><line x1="0" x2="' + W + '" y1="' + Y(mn) + '" y2="' + Y(mn) + '" stroke-dasharray="3 4"/>' +
         '<path class="area' + (up ? '' : ' dn') + '" d="' + line + 'L' + W + ' ' + (H - 24) + 'L0 ' + (H - 24) + 'Z"/><path class="line' + (up ? '' : ' dn') + '" d="' + line + '"/>' +
-        '<text x="4" y="' + (Y(mx) + 15) + '">' + nf(mx, 2) + '</text><text x="4" y="' + (Y(mn) + 14) + '">' + nf(mn, 2) + '</text>' +
+        '<text x="4" y="' + (Y(mx) + 15) + '">' + nf(mx, dd) + '</text><text x="4" y="' + (Y(mn) - 6) + '">' + nf(mn, dd) + '</text>' +
         '<text x="0" y="' + (H - 4) + '">' + lab(pts[0][0]) + '</text><text x="' + W + '" y="' + (H - 4) + '" text-anchor="end">' + lab(pts[pts.length - 1][0]) + '</text>' +
         '<g id="ch-hl" style="display:none"><line id="ch-vl" y1="0" y2="' + (H - 24) + '"/><circle id="ch-dot" r="5"/></g>';
       var ch = (v[v.length - 1] / v[0] - 1) * 100;
-      setText('#ch-name', CNAME[chCur].replace('ABD Doları', 'Dolar').replace('İngiliz Sterlini', 'Sterlin').replace('İsviçre Frangı', 'Frank'));
-      setHTML('#ch-stats', 'Son: <b>' + nf(v[v.length - 1], 4) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '+' : '−') + '%' + nf(Math.abs(ch), 2) + '</span> · en düşük ' + nf(mn, 2) + ' · en yüksek ' + nf(mx, 2));
+      baseStats = 'Son: <b>' + nf(v[v.length - 1], dec(v[v.length - 1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' %' + nf(Math.abs(ch), 2) + '</span> · en düşük ' + nf(mn, dd) + ' · en yüksek ' + nf(mx, dd);
+      setHTML('#ch-stats', baseStats);
       cur = { pts: pts, X: X, Y: Y, W: W };
     }
     function hover(e) {
@@ -438,22 +517,19 @@
       var hl = $('#ch-hl'); if (!hl) return; hl.style.display = '';
       var x = cur.X(i), y = cur.Y(p[1]);
       $('#ch-vl').setAttribute('x1', x); $('#ch-vl').setAttribute('x2', x); $('#ch-dot').setAttribute('cx', x); $('#ch-dot').setAttribute('cy', y);
-      var d = new Date(p[0]);
-      tip.hidden = false; tip.innerHTML = '<small>' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</small><b>' + nf(p[1], 4) + ' ₺</b>';
-      tip.style.left = Math.max(60, Math.min(r.width - 60, x / cur.W * r.width)) + 'px';
+      var d = new Date(p[0]), c0 = (p[1] / cur.pts[0][1] - 1) * 100, up = c0 >= 0;
+      setHTML('#ch-stats', '<b>' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</b> · <b>' + nf(p[1], dec(p[1])) + ' ₺</b> · <span class="' + (up ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' %' + nf(Math.abs(c0), 2) + '</span> <span class="muted">dönem başına göre</span>');
     }
-    box.addEventListener('pointermove', hover);
-    box.addEventListener('pointerleave', function () { tip.hidden = true; var hl = $('#ch-hl'); if (hl) hl.style.display = 'none'; });
-    function segGroup(id, attr, fn) {
-      $$('#' + id + ' .seg-btn').forEach(function (b) {
-        b.addEventListener('click', function () { $$('#' + id + ' .seg-btn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); fn(b.dataset[attr]); draw(); });
-      });
-    }
-    segGroup('ch-cur', 'c', function (v) { chCur = v; });
-    segGroup('ch-range', 'd', function (v) { chDays = +v; });
+    function leave() { var hl = $('#ch-hl'); if (hl) hl.style.display = 'none'; setHTML('#ch-stats', baseStats); }
+    box.addEventListener('pointermove', hover); box.addEventListener('pointerdown', hover);
+    box.addEventListener('pointerleave', leave); box.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') leave(); });
+    $$('#ch-range .seg-btn').forEach(function (b) {
+      b.addEventListener('click', function () { $$('#ch-range .seg-btn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); chDays = +b.dataset.d; draw(); });
+    });
     var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(draw, 150); });
-    fxHistory().then(function (h) { hist = h; draw(); majors(); }).catch(function () { setText('#ch-stats', 'Grafik verisi alınamadı.'); });
-    load(); setInterval(load, 120000);
+    chips();
+    fxHistory(FAV.concat(chCur)).then(function (h) { hist = h; draw(); majors(); }).catch(function () { setText('#ch-stats', 'Grafik verisi alınamadı.'); });
+    loadFin(); setInterval(loadFin, 120000);
   }
 
   /* ---------- Altın ---------- */
@@ -638,7 +714,7 @@
       getJSON(API.prayMonth(c, now.getFullYear(), now.getMonth() + 1), 3600).then(function (j) {
         $('#pray-month').innerHTML = j.data.map(function (d) {
           var g = d.date.gregorian, today = +g.day === now.getDate();
-          return '<tr' + (today ? ' class="is-next"' : '') + '><td><b>' + +g.day + ' ' + MONTHS[now.getMonth()] + '</b></td>' + PR.map(function (p) { return '<td>' + d.timings[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
+          return '<tr' + (today ? ' class="is-next"' : '') + '><td><b>' + +g.day + '<span class="mo"> ' + MONTHS[now.getMonth()] + '</span></b></td>' + PR.map(function (p) { return '<td>' + d.timings[p[0]].slice(0, 5) + '</td>'; }).join('') + '</tr>';
         }).join('');
         setText('#pray-month-title', MONTHS[now.getMonth()] + ' ' + now.getFullYear() + ' — ' + c.name);
       }).catch(function () { $('#pray-month').innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Aylık tablo alınamadı.</td></tr>'; });

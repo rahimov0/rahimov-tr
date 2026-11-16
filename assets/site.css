@@ -299,13 +299,14 @@ a.tile:hover, a.card:hover { box-shadow: var(--shadow-lift); transform: translat
 .seg-btn:hover { color: var(--text); }
 .seg-btn[aria-checked="true"], .seg-btn[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 .seg-sm .seg-btn { padding: 6px 11px; font-size: 13px; min-height: 32px; }
-.linkbtn { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 4px 0; cursor: pointer; font: 700 14px/1 var(--font-body); color: var(--accent); }
+.linkbtn { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 0 2px; min-height: 40px; cursor: pointer; font: 700 14px/1 var(--font-body); color: var(--accent); }
 .linkbtn:hover { text-decoration: underline; }
 .linkbtn .icon { width: 15px; height: 15px; }
 .list-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 48px 0 16px; }
 .list-head h2 { font-size: 28px; line-height: 34px; letter-spacing: -0.03em; }
 .list-tools .input { width: min(320px, 100%); height: 44px; border-radius: 999px; padding: 0 18px; }
-.list-tools { flex: 0 1 320px; }
+.list-tools { flex: 0 1 320px; display: flex; gap: 8px; }
+.sort-m { display: none; height: 44px; border-radius: 999px; }
 
 /* ---------- Döviz: çevirici ---------- */
 .fx-top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--gap); align-items: stretch; }
@@ -343,6 +344,39 @@ a.tile:hover, a.card:hover { box-shadow: var(--shadow-lift); transform: translat
 .mj-spark path { fill: none; stroke: var(--text-3); stroke-width: 1.75; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .major:hover .mj-spark path { stroke: var(--up); }
 
+
+/* Favoriler */
+.fav-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fav-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 4px; font-size: 14px; font-weight: 800; color: var(--text-2); }
+.fav-head small { font-weight: 700; }
+.fav-col .fx-majors { flex: 1; grid-auto-rows: 1fr; }
+.fav-hint { font-size: 13px; line-height: 19px; color: var(--text-3); padding: 0 4px; }
+.major { position: relative; }
+.fx-majors.editing .major[data-c] { cursor: default; animation: wob .35s ease; }
+@keyframes wob { 30% { transform: rotate(-.6deg); } 70% { transform: rotate(.6deg); } }
+.mj-del { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--primary); color: var(--on-primary); cursor: pointer; }
+.mj-del .icon { width: 16px; height: 16px; }
+.mj-nochart { margin-top: auto; padding-top: 8px; font-size: 12px; color: var(--text-3); }
+.mj-empty { align-items: center; justify-content: center; gap: 8px; min-height: 150px; border: 1.5px dashed var(--line-2); background: transparent; box-shadow: none; color: var(--text-2); font-weight: 700; font-size: 14px; cursor: pointer; }
+.mj-empty:hover { border-color: var(--text-3); color: var(--text); transform: none; box-shadow: none; }
+.mj-empty:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mj-empty .icon { width: 22px; height: 22px; }
+.mj-pick { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.star { display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -2px -6px -8px; border: 0; background: none; border-radius: 50%; cursor: pointer; color: var(--text-3); flex: none; }
+.star:hover { background: var(--sunken); color: var(--text); }
+.star .icon { width: 19px; height: 19px; transition: transform .2s, fill .2s; }
+.star[aria-pressed="true"] { color: #E0A100; }
+.star[aria-pressed="true"] .icon { fill: currentColor; transform: scale(1.08); }
+.th-sort { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.th-sort::after { content: " ↕"; opacity: .45; }
+th[aria-sort="ascending"] .th-sort::after { content: " ↑"; opacity: 1; }
+th[aria-sort="descending"] .th-sort::after { content: " ↓"; opacity: 1; }
+.th-sort:hover { color: var(--text); }
+.rtable tr.is-sel td { background: var(--surface-2); }
+.rtable tr.is-sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.toast { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 14px; box-shadow: var(--shadow-lift); transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* Döviz: grafik */
 .chart-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .chart-title { font-size: 24px; line-height: 30px; letter-spacing: -0.02em; }
@@ -353,7 +387,7 @@ a.tile:hover, a.card:hover { box-shadow: var(--shadow-lift); transform: translat
 .chart path.area.dn { fill: var(--down); }
 .chart #ch-vl { stroke: var(--text-3); stroke-dasharray: 2 3; }
 .chart #ch-dot { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
-.ch-tip { position: absolute; top: 0; transform: translateX(-50%); padding: 6px 10px; border-radius: 10px; background: var(--primary); color: var(--on-primary); pointer-events: none; text-align: center; white-space: nowrap; }
+.ch-tip-old { position: absolute; top: 0; transform: translateX(-50%); padding: 6px 10px; border-radius: 10px; background: var(--primary); color: var(--on-primary); pointer-events: none; text-align: center; white-space: nowrap; }
 .ch-tip small { display: block; font-size: 11px; opacity: .75; }
 .ch-tip b { font-size: 14px; font-variant-numeric: tabular-nums; }
 
@@ -364,12 +398,17 @@ a.tile:hover, a.card:hover { box-shadow: var(--shadow-lift); transform: translat
 .rtable tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (max-width: 680px) {
   .rtable thead { display: none; }
+  .list-tools { flex: 1 1 100%; flex-direction: column; }
+  .list-tools .input { width: 100%; }
+  .sort-m { display: block; }
   .rtable, .rtable tbody { display: block; }
   .rtable tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
   .rtable td { border: 0; padding: 0; text-align: right; }
   .rtable td:first-child { grid-row: span 2; align-self: center; text-align: left; }
   .rtable td[data-l="Alış"], .rtable td[data-l="Makas"] { display: none; }
-  .rtable tbody tr:hover td { background: none; }
+  .rtable tbody tr:hover td, .rtable tr.is-sel td { background: none; box-shadow: none; }
+  .rtable tr.is-sel { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+  .mj-sub .muted { display: none; }
 }
 @media (max-width: 900px) { .fx-top { grid-template-columns: 1fr; } }
 @media (max-width: 420px) { .cv-in, .cv-res { font-size: 32px; } .mj-val { font-size: 21px; } }
@@ -475,6 +514,31 @@ tr.is-next td { background: var(--accent-soft); }
 .mag.m3 { background: var(--m3-bg); color: var(--m3); }
 .mag.m4 { background: var(--m4-bg); color: var(--m4); }
 .mag.m5 { background: var(--m5-bg); color: var(--m5); }
+
+/* Telefonda tablolar karta dönüşür */
+.pray-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-bottom: 12px; font-size: 15px; color: var(--text-3); font-weight: 600; }
+.pray-meta b { color: var(--text); }
+@media (max-width: 680px) {
+  .mtable thead, .qtable thead { display: none; }
+  .mtable, .mtable tbody, .qtable, .qtable tbody { display: block; }
+  .mtable tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); align-items: center; }
+  .mtable td, .qtable td { border: 0; padding: 0; text-align: right; white-space: normal; min-width: 0; }
+  .mtable td:first-child { grid-row: span 3; text-align: left; }
+  .mtable tbody tr:hover td, .qtable tbody tr:hover td, .mtable tr.is-next td { background: none; }
+  .mtable tr.is-next { background: var(--accent-soft); }
+  .mtable tr:last-child, .qtable tr:last-child { border-bottom: 0; }
+  .qtable tr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); align-items: start; }
+  .qtable td:first-child { grid-row: span 2; padding-top: 2px; }
+  .qtable td.wrap-cell { min-width: 0; text-align: left !important; }
+  .qtable td:last-child { text-align: left; font-size: 13px; color: var(--text-2); }
+  .qtable td:last-child .sub { display: inline; margin-left: 6px; }
+  .ptable th, .ptable td { padding: 9px 3px; font-size: 12.5px; letter-spacing: -0.01em; }
+  .ptable { min-width: 0; }
+  .ptable th:first-child, .ptable td:first-child { padding-left: 12px; }
+  .ptable th:last-child, .ptable td:last-child { padding-right: 12px; }
+  .ptable .mo { display: none; }
+  dl.wx-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; }
+}
 
 /* ---------- Hava sayfası ---------- */
 .wx-now { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }

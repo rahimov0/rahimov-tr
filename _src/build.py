@@ -11,6 +11,8 @@ ICONS = """
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="i-fx" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
 <symbol id="i-swapv" viewBox="0 0 24 24"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-4-4L4 16v4z"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
 <symbol id="i-gold" viewBox="0 0 24 24"><path d="M8 10h8l2 5H6zM3 20l1.5-4h6L12 20zM12 20l1.5-4h6L21 20zM9 6l1-2M15 6l-1-2M12 5V3"/></symbol>
@@ -289,7 +291,7 @@ PAGES["/"] = dict(page="home", title="Rahimov — Döviz, altın, hava durumu, d
 
 <section class="section" aria-labelledby="deprem-title"><div class="wrap">
   <div class="section-head"><div><h2 id="deprem-title">Son depremler</h2><p>Kandilli Rasathanesi'nin yayımladığı son beş kayıt.</p></div><a class="more" href="/deprem/">Tüm liste {icon('i-arrow')}</a></div>
-  <div class="table-wrap"><table><thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead><tbody id="home-quakes"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody></table></div>
+  <div class="table-wrap"><table class="qtable"><thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead><tbody id="home-quakes"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody></table></div>
 </div></section>
 
 <section class="section" aria-labelledby="projeler-title"><div class="wrap">
@@ -360,27 +362,29 @@ PAGES["/doviz/"] = dict(page="doviz", title="Döviz kurları ve döviz çevirici
       <div class="quick" aria-label="Hızlı tutar"><button type="button" data-v="1">1</button><button type="button" data-v="100">100</button><button type="button" data-v="500">500</button><button type="button" data-v="1000">1.000</button><button type="button" data-v="10000">10.000</button></div>
       <p class="b-foot" id="cv-note">Ortalama: alış ve satış fiyatının ortası. Bankada eline geçecek tutar makas ve vergi nedeniyle farklı olur.</p>
     </div>
-    <div class="fx-majors" id="fx-majors" aria-label="Öne çıkan kurlar"></div>
+    <div class="fav-col"><div class="fav-head"><span>Favorilerim <small class="muted" id="fav-count"></small></span><button class="linkbtn" type="button" id="fav-edit" aria-pressed="false">{icon('i-edit')}Düzenle</button></div>
+      <div class="fx-majors" id="fx-majors" aria-label="Favori kurlar"></div>
+      <p class="fav-hint" id="fav-hint" hidden>Kartın köşesindeki çarpıyla çıkar, boş kutudan yeni para birimi ekle. Aşağıdaki listede yıldıza dokunarak da seçebilirsin.</p></div>
   </div>
 
   <div class="b chart-card" style="margin-top:var(--gap)">
     <div class="chart-head">
       <div><h2 class="chart-title"><span id="ch-name">Dolar</span> / TL</h2><p class="b-sub num" id="ch-stats">&nbsp;</p></div>
       <div class="chart-ctrl">
-        <div class="seg seg-sm" id="ch-cur"><button type="button" class="seg-btn" data-c="USD" aria-pressed="true">USD</button><button type="button" class="seg-btn" data-c="EUR" aria-pressed="false">EUR</button><button type="button" class="seg-btn" data-c="GBP" aria-pressed="false">GBP</button><button type="button" class="seg-btn" data-c="CHF" aria-pressed="false">CHF</button></div>
+        <div class="seg seg-sm" id="ch-cur" aria-label="Grafikte gösterilecek para birimi"></div>
         <div class="seg seg-sm" id="ch-range"><button type="button" class="seg-btn" data-d="30" aria-pressed="false">1 ay</button><button type="button" class="seg-btn" data-d="90" aria-pressed="true">3 ay</button><button type="button" class="seg-btn" data-d="365" aria-pressed="false">1 yıl</button></div>
       </div>
     </div>
-    <div class="chart-box" id="ch-box"><svg class="chart" id="fx-chart" role="img" aria-label="Kur grafiği" preserveAspectRatio="none"></svg><div class="ch-tip" id="ch-tip" hidden></div></div>
-    <p class="muted" style="font-size:13px;margin-top:8px">Grafik merkez bankalarının günlük referans kurlarını gösterir; hafta sonu ve tatillerde veri yoktur. Üzerinde gezinerek gün gün değeri gör.</p>
+    <div class="chart-box" id="ch-box"><svg class="chart" id="fx-chart" role="img" aria-label="Kur grafiği" preserveAspectRatio="none"></svg></div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Grafik merkez bankalarının günlük referans kurlarını gösterir; hafta sonu ve tatillerde veri yoktur. Üzerinde gezinerek ya da parmağını kaydırarak gün gün değeri gör. Grafik düğmeleri favorilerinden gelir.</p>
   </div>
 
   <div class="list-head">
-    <h2>Tüm kurlar</h2>
-    <div class="list-tools"><input class="input" id="fx-search" type="search" placeholder="Ara: dolar, AZN, riyal…" aria-label="Para birimi ara"></div>
+    <div><h2>Tüm kurlar</h2><p class="b-sub">Yıldıza dokunarak favorilerine ekle; satıra dokununca çeviriciye geçer.</p></div>
+    <div class="list-tools"><input class="input" id="fx-search" type="search" placeholder="Ara: dolar, AZN, riyal…" aria-label="Para birimi ara"><select class="select sort-m" id="fx-sort" aria-label="Sırala"><option value="">Sırala: favoriler önce</option><option value="c:-1">En çok yükselen</option><option value="c:1">En çok düşen</option><option value="spr:1">Makası en dar</option><option value="code:1">Koda göre (A–Z)</option></select></div>
   </div>
   <div class="table-wrap"><table class="rtable">
-    <thead><tr><th>Para birimi</th><th>Alış</th><th>Satış</th><th>Makas</th><th>Günlük</th></tr></thead>
+    <thead><tr><th aria-sort="none"><button class="th-sort" type="button" data-sort="code">Para birimi</button></th><th>Alış</th><th aria-sort="none"><button class="th-sort" type="button" data-sort="s">Satış</button></th><th aria-sort="none"><button class="th-sort" type="button" data-sort="spr">Makas</button></th><th aria-sort="none"><button class="th-sort" type="button" data-sort="c">Günlük</button></th></tr></thead>
     <tbody id="fx-body"><tr><td colspan="5" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
 
@@ -539,7 +543,7 @@ PAGES["/deprem/"] = dict(page="deprem", title="Son depremler — Kandilli Rasath
     </div>
     <div class="field" style="flex:0 1 280px"><label for="q-search" class="sr-only">Yer ara</label><input class="input" id="q-search" type="search" placeholder="İl ya da ilçe ara…" style="height:40px"></div>
   </div>
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table class="qtable">
     <thead><tr><th>Büyüklük</th><th style="text-align:left">Yer</th><th>Saat</th></tr></thead>
     <tbody id="q-body"><tr><td colspan="3" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
@@ -586,12 +590,12 @@ PAGES["/namaz-vakitleri/"] = dict(page="namaz", title="Namaz vakitleri — İmsa
 <section class="section"><div class="wrap">
   {CITYBAR}
   <div id="pray-err"></div>
-  <p class="tile-label" style="margin-bottom:12px;font-size:15px"><b style="color:var(--text)"><span id="pray-city">—</span> · <span id="pray-date"></span></b><span id="pray-hijri"></span></p>
+  <p class="pray-meta"><b><span id="pray-city">—</span> · <span id="pray-date"></span></b><span id="pray-hijri"></span></p>
   <div class="pray-grid" id="pray-grid"></div>
   <p class="note" id="pray-next" aria-live="off" style="margin-top:16px">Vakitler yükleniyor…</p>
 
   <h2 style="font-size:22px;line-height:28px;margin:40px 0 12px" id="pray-month-title">Aylık vakitler</h2>
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table class="ptable">
     <thead><tr><th>Gün</th><th>İmsak</th><th>Güneş</th><th>Öğle</th><th>İkindi</th><th>Akşam</th><th>Yatsı</th></tr></thead>
     <tbody id="pray-month"><tr><td colspan="7" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
@@ -629,7 +633,7 @@ PAGES["/kripto/"] = dict(page="kripto", title="Kripto para fiyatları — Bitcoi
     body=page_head("Kripto para fiyatları", "En büyük on kripto paranın dolar ve TL fiyatı ile son 24 saatteki değişimi.",
         '<p class="updated"><span class="live-dot"></span><span id="c-updated">Yükleniyor…</span> · 2 dakikada bir yenilenir</p>') + f"""
 <section class="section"><div class="wrap">
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table class="mtable">
     <thead><tr><th>Kripto para</th><th>Fiyat ($)</th><th>Fiyat (₺)</th><th>24 saat</th></tr></thead>
     <tbody id="c-body"><tr><td colspan="4" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
@@ -669,7 +673,7 @@ PAGES["/resmi-tatiller/"] = dict(page="tatil", title="Resmî tatiller — Bu yı
     <div><p class="tile-label">Sıradaki resmî tatil</p><p class="tile-value wrap-ok" id="h-next-name" style="font-size:26px;line-height:32px"><span class="skeleton">Yükleniyor</span></p><p class="tile-sub" id="h-next-date">&nbsp;</p></div>
     <div style="text-align:right"><p class="tile-label" style="justify-content:flex-end">Kalan süre</p><p class="tile-value" id="h-next-left"><span class="skeleton">00 gün</span></p></div>
   </div>
-  <div class="table-wrap"><table>
+  <div class="table-wrap"><table class="mtable">
     <thead><tr><th>Tatil</th><th>Tarih</th><th>Gün</th><th>Kalan</th></tr></thead>
     <tbody id="h-body"><tr><td colspan="4" class="muted" style="text-align:center">Yükleniyor…</td></tr></tbody>
   </table></div>
