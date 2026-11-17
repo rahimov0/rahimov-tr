@@ -36,13 +36,26 @@ struct WebTab: UIViewRepresentable {
         cfg.applicationNameForUserAgent = "RahimovApp/1.0"
         cfg.websiteDataStore = .default()
         cfg.userContentController.addUserScript(context.coordinator.stateScript())
+        cfg.userContentController.addUserScript(Coordinator.nativeFeelScript)
         cfg.userContentController.add(context.coordinator, name: "rahimov")
         let wv = WKWebView(frame: .zero, configuration: cfg)
         wv.navigationDelegate = context.coordinator
         wv.uiDelegate = context.coordinator
         wv.allowsBackForwardNavigationGestures = true
         wv.isOpaque = false
-        wv.backgroundColor = .systemBackground
+        let bg = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0x12/255, green: 0x11/255, blue: 0x10/255, alpha: 1) : UIColor(red: 0xF2/255, green: 0xEF/255, blue: 0xE8/255, alpha: 1) }
+        wv.backgroundColor = bg
+        wv.scrollView.backgroundColor = bg
+        wv.underPageBackgroundColor = bg
+        // Uygulama gibi davranış: yakınlaştırma yok, uzun basınca bağlantı önizlemesi yok, yatay kayma yok
+        wv.allowsLinkPreview = false
+        wv.scrollView.minimumZoomScale = 1
+        wv.scrollView.maximumZoomScale = 1
+        wv.scrollView.bouncesZoom = false
+        wv.scrollView.pinchGestureRecognizer?.isEnabled = false
+        wv.scrollView.alwaysBounceHorizontal = false
+        wv.scrollView.showsHorizontalScrollIndicator = false
+        wv.scrollView.contentInsetAdjustmentBehavior = .never
         let rc = UIRefreshControl()
         rc.addTarget(context.coordinator, action: #selector(Coordinator.refresh(_:)), for: .valueChanged)
         wv.scrollView.refreshControl = rc
@@ -126,12 +139,36 @@ struct WebTab: UIViewRepresentable {
             }
         }
 
+        /// Sayfaya uygulama hissi: iki parmak / çift dokunma yakınlaştırması kapalı, metin seçimi ve dokunma vurgusu yok
+        static let nativeFeelScript: WKUserScript = {
+            let js = """
+            (function(){
+              function vp(){
+                var m=document.querySelector('meta[name=viewport]');
+                if(!m){m=document.createElement('meta');m.name='viewport';(document.head||document.documentElement).appendChild(m);}
+                m.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no');
+              }
+              vp(); document.addEventListener('DOMContentLoaded', vp);
+              var st=document.createElement('style');
+              st.textContent='html{-webkit-text-size-adjust:100%;touch-action:pan-x pan-y}'+
+                '*{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}'+
+                'body{-webkit-user-select:none;user-select:none;overflow-x:hidden}'+
+                'input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}'+
+                'a,button,input,select,label,[role=button]{touch-action:manipulation}';
+              (document.head||document.documentElement).appendChild(st);
+              document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+            })();
+            """
+            return WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        }()
+
         @objc func refresh(_ rc: UIRefreshControl) { web?.reload(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { rc.endRefreshing() } }
         @objc func cityChanged(_ n: Notification) {
             guard let web, (n.object as? String) != id else { return }   // değişikliği yapan sekme zaten güncel
             let ucc = web.configuration.userContentController
             ucc.removeAllUserScripts()
             ucc.addUserScript(stateScript())
+            ucc.addUserScript(Self.nativeFeelScript)
             web.reload()
         }
 
