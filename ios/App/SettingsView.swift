@@ -1,13 +1,10 @@
 import SwiftUI
 import CoreLocation
 import WidgetKit
-import StoreKit
-import AdSupport
 import UIKit
 
 struct SettingsView: View {
     @Binding var path: [String]
-    @EnvironmentObject var purchases: Purchases
     @StateObject private var loc = LocationFetcher()
     @State private var city = Store.city
     @State private var notifOn = Notif.enabled
@@ -16,8 +13,6 @@ struct SettingsView: View {
     @State private var ramadan = Notif.ramadan
     @State private var sahur = Notif.sahurBefore
     @State private var denied = false
-    @State private var taps = 0
-    @State private var adID: String?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -65,39 +60,26 @@ struct SettingsView: View {
                     Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır."))
                 }
 
-                Section {
-                    if purchases.removed {
-                        Label(T("Reklamlar kaldırıldı"), systemImage: "checkmark.seal.fill").foregroundStyle(.green)
-                    } else {
-                        Button { Task { await purchases.buy() } } label: {
-                            HStack { Label(T("Reklamları kaldır"), systemImage: "nosign"); Spacer(); Text(purchases.product?.displayPrice ?? "").foregroundStyle(.secondary) }
-                        }.disabled(purchases.busy)
-                    }
-                    Button(T("Satın alımları geri yükle")) { Task { await purchases.restore() } }.disabled(purchases.busy)
-                    if let m = purchases.message { Text(m).font(.footnote).foregroundStyle(.secondary) }
-                } header: { Text(T("Reklamlar")) } footer: { Text(T("Tek seferlik ödeme; aynı Apple hesabıyla diğer cihazlarında da geçerli olur.")) }
-
                 Section(T("Widget'lar")) {
                     Text(T("Ana ekranda boş bir yere basılı tut, sol üstteki + düğmesine dokun ve “KROV”u ara. Panel, Namaz, Döviz ve Hava widget'larından istediğini ekleyebilirsin. Namaz widget'ı kilit ekranına da eklenebilir."))
                         .font(.callout).foregroundStyle(.secondary)
                 }
 
+                Section {
+                    ForEach(Sources.all, id: \.name) { src in
+                        Link(destination: URL(string: src.url)!) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(src.name).foregroundStyle(.primary)
+                                Text(T(src.what)).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: { Text(T("Veri kaynakları")) } footer: { Text(T("Veriler bilgilendirme amaçlıdır; yatırım tavsiyesi değildir. Lisanslar ve ayrıntılar için kaynağa dokun.")) }
+
                 Section(T("Hakkında")) {
                     Link(destination: URL(string: "https://rahimov.tr" + Lang.current.sitePrefix + "/gizlilik/")!) { Label(T("Gizlilik Politikası"), systemImage: "hand.raised.fill") }
                     Link(destination: URL(string: "https://rahimov.tr" + Lang.current.sitePrefix + "/iletisim/")!) { Label(T("İletişim"), systemImage: "envelope.fill") }
                     LabeledContent(T("Sürüm"), value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "")
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            // Gizli: 7 kez dokununca reklam kimliği (AdMob test cihazı eklemek için)
-                            taps += 1
-                            if taps >= 7 { taps = 0; adID = ASIdentifierManager.shared().advertisingIdentifier.uuidString }
-                        }
-                    if let id = adID {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(id.hasPrefix("00000000") ? "Reklam kimliği kapalı (izleme izni verilmemiş)." : id).font(.footnote.monospaced()).textSelection(.enabled)
-                            Button("Kopyala") { UIPasteboard.general.string = id }
-                        }
-                    }
                 }
             }
             .navigationTitle(T("Daha fazla"))
@@ -107,7 +89,6 @@ struct SettingsView: View {
                     else { WebTab(id: "daha:tatil", path: "/resmi-tatiller/").navigationTitle(T("Resmî tatiller")) }
                 }
                 .navigationBarTitleDisplayMode(.inline)
-                .adBanner(!purchases.removed)
             }
             .onReceive(NotificationCenter.default.publisher(for: .cityChanged)) { _ in city = Store.city }
         }
@@ -193,4 +174,21 @@ struct CitySearch: View {
         }
         .navigationTitle(T("Şehir ara"))
     }
+}
+
+// MARK: - Veri kaynakları (kaynak gösterimi)
+
+enum Sources {
+    struct S { let name: String; let what: String; let url: String }
+    static let all: [S] = [
+        S(name: "Truncgil Finans", what: "Döviz ve altın fiyatları", url: "https://finans.truncgil.com/"),
+        S(name: "Frankfurter (ECB)", what: "Döviz kuru grafikleri", url: "https://frankfurter.dev/"),
+        S(name: "Exchange API (fawazahmed0)", what: "Diğer para birimlerinin grafikleri", url: "https://github.com/fawazahmed0/exchange-api"),
+        S(name: "Open-Meteo", what: "Hava durumu ve şehir arama (CC BY 4.0)", url: "https://open-meteo.com/"),
+        S(name: "AlAdhan", what: "Namaz vakitleri (Diyanet yöntemi)", url: "https://aladhan.com/"),
+        S(name: "Kandilli Rasathanesi (KOERI)", what: "Son depremler", url: "http://www.koeri.boun.edu.tr/scripts/lst0.asp"),
+        S(name: "CoinGecko", what: "Kripto para fiyatları", url: "https://www.coingecko.com/"),
+        S(name: "Nager.Date", what: "Resmî tatiller", url: "https://date.nager.at/"),
+        S(name: "BigDataCloud", what: "Konumdan şehir adı", url: "https://www.bigdatacloud.com/"),
+    ]
 }

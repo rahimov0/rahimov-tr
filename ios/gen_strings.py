@@ -1,5 +1,15 @@
 import json,sys
 S = {
+"Veri kaynakları": ("Data sources","Источники данных","Məlumat mənbələri"),
+"Veriler bilgilendirme amaçlıdır; yatırım tavsiyesi değildir. Lisanslar ve ayrıntılar için kaynağa dokun.": ("Data is for information only and is not investment advice. Tap a source for licences and details.","Данные носят информационный характер и не являются инвестиционной рекомендацией. Нажмите на источник, чтобы узнать о лицензии.","Məlumatlar informasiya xarakterlidir, investisiya tövsiyəsi deyil. Lisenziya üçün mənbəyə toxunun."),
+"Döviz ve altın fiyatları": ("Currency and gold prices","Курсы валют и цены на золото","Valyuta və qızıl qiymətləri"),
+"Döviz kuru grafikleri": ("Exchange rate charts","Графики курсов","Valyuta məzənnəsi qrafikləri"),
+"Diğer para birimlerinin grafikleri": ("Charts for other currencies","Графики других валют","Digər valyutaların qrafikləri"),
+"Hava durumu ve şehir arama (CC BY 4.0)": ("Weather and city search (CC BY 4.0)","Погода и поиск города (CC BY 4.0)","Hava və şəhər axtarışı (CC BY 4.0)"),
+"Namaz vakitleri (Diyanet yöntemi)": ("Prayer times (Diyanet method)","Время намаза (метод Diyanet)","Namaz vaxtları (Diyanət üsulu)"),
+"Son depremler": ("Recent earthquakes","Последние землетрясения","Son zəlzələlər"),
+"Kripto para fiyatları": ("Cryptocurrency prices","Цены криптовалют","Kriptovalyuta qiymətləri"),
+"Konumdan şehir adı": ("City name from location","Название города по местоположению","Məkandan şəhər adı"),
 "Daha fazla": ("More","Ещё","Daha çox"),
 "Altın": ("Gold","Золото","Qızıl"),
 "Kripto": ("Crypto","Крипто","Kripto"),

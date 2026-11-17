@@ -5,13 +5,11 @@ import BackgroundTasks
 @main
 struct RahimovApp: App {
     @Environment(\.scenePhase) private var phase
-    @StateObject private var purchases = Purchases.shared
     @State private var tab = "panel"
 
     var body: some Scene {
         WindowGroup {
             RootView(tab: $tab)
-                .environmentObject(purchases)
                 .onOpenURL { url in
                     switch url.host {
                     case "doviz": NotificationCenter.default.post(name: .switchTab, object: "piyasa:doviz")
@@ -20,8 +18,6 @@ struct RahimovApp: App {
                     }
                 }
                 .task {
-                    await purchases.start()
-                    Ads.startAfterConsent()
                     await Notif.reschedule()
                     scheduleRefresh()
                 }
@@ -46,7 +42,6 @@ func scheduleRefresh() {
 
 struct RootView: View {
     @Binding var tab: String
-    @EnvironmentObject var purchases: Purchases
     @State private var market = "doviz"
     @State private var morePath: [String] = []
 
@@ -60,13 +55,13 @@ struct RootView: View {
             tab = v
         })
         TabView(selection: sel) {
-            WebTab(id: "panel", path: "/").adBanner(!purchases.removed)
+            WebTab(id: "panel", path: "/")
                 .tabItem { Label(T("Panel"), systemImage: "square.grid.2x2.fill") }.tag("panel")
-            MarketTab(segment: $market).adBanner(!purchases.removed)
+            MarketTab(segment: $market)
                 .tabItem { Label(T("Piyasa"), systemImage: "chart.line.uptrend.xyaxis") }.tag("piyasa")
-            WebTab(id: "hava", path: "/hava-durumu/").adBanner(!purchases.removed)
+            WebTab(id: "hava", path: "/hava-durumu/")
                 .tabItem { Label(T("Hava"), systemImage: "cloud.sun.fill") }.tag("hava")
-            WebTab(id: "namaz", path: "/namaz-vakitleri/").adBanner(!purchases.removed)
+            WebTab(id: "namaz", path: "/namaz-vakitleri/")
                 .tabItem { Label(T("Namaz"), systemImage: "moon.stars.fill") }.tag("namaz")
             SettingsView(path: $morePath)
                 .tabItem { Label(T("Daha fazla"), systemImage: "ellipsis.circle.fill") }.tag("daha")

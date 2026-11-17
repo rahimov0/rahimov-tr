@@ -11,18 +11,6 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: "$(DEVELOPMENT_TEAM)"
     CODE_SIGN_STYLE: Automatic
-    # Google'ın test kimlikleri; gerçekleri release iş akışında GitHub değişkenlerinden gelir
-    GAD_APP_ID: ca-app-pub-3940256099942544~1458002511
-    AD_BANNER_ID: ca-app-pub-3940256099942544/2435281174
-  configs:
-    # Mağaza sürümü gerçek AdMob kimlikleriyle; Debug test kimlikleriyle kalır
-    Release:
-      GAD_APP_ID: ca-app-pub-6811894230993861~1210146366
-      AD_BANNER_ID: ca-app-pub-6811894230993861/4693775008
-packages:
-  GoogleMobileAds:
-    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
-    majorVersion: 12.0.0
 targets:
   Rahimov:
     type: application
@@ -33,7 +21,6 @@ targets:
       - path: Resources
     dependencies:
       - target: RahimovWidgets
-      - package: GoogleMobileAds
     entitlements:
       path: App/Rahimov.entitlements
       properties:
@@ -49,12 +36,7 @@ targets:
         UILaunchScreen: {UIColorName: LaunchBg}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
-        GADApplicationIdentifier: $(GAD_APP_ID)
-        AdBannerUnitID: $(AD_BANNER_ID)
-        NSUserTrackingUsageDescription: "Size daha uygun reklamlar gösterebilmek için kullanılır. İzin vermezseniz de uygulama aynen çalışır."
         NSLocationWhenInUseUsageDescription: "Bulunduğunuz şehrin hava durumunu ve namaz vakitlerini göstermek için kullanılır."
-        SKAdNetworkItems:
-          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
         UIBackgroundModes: [fetch]
         BGTaskSchedulerPermittedIdentifiers: [tr.rahimov.app.refresh]
     settings:

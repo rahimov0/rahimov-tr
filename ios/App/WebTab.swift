@@ -178,11 +178,3 @@ struct WebTab: UIViewRepresentable {
     }
 }
 
-extension View {
-    /// Reklam kaldırılmadıysa sekmenin altına AdMob banner'ı ekler.
-    @ViewBuilder func adBanner(_ show: Bool) -> some View {
-        if show {
-            self.safeAreaInset(edge: .bottom, spacing: 0) { BannerAd().frame(height: 50).background(.bar) }
-        } else { self }
-    }
-}
