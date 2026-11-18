@@ -17,6 +17,9 @@ extension Color {
     static let ink2 = Color(light: 0x57524A, dark: 0xB5AFA4)
     static let up = Color(light: 0x1D7A48, dark: 0x5CC58C)
     static let down = Color(light: 0xC0352E, dark: 0xF27A71)
+    static let upLight = Color(hex: 0x7BE3A8)
+    static let downLight = Color(hex: 0xFF9C93)
+    init(hex v: UInt) { self.init(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255) }
 }
 
 /// Namaz kutusu: vakte göre gökyüzü rengi (sitedeki gibi). Ramazan'da sıcak gün batımı.
@@ -29,9 +32,77 @@ func skyGradient(_ phase: Int, ramadan: Bool) -> LinearGradient {
 
 struct ChangeText: View {
     let v: Double
+    var dark = false
     var body: some View {
         Text((v > 0 ? "▲ " : v < 0 ? "▼ " : "") + Fmt.pct(v))
-            .font(.caption2.weight(.bold)).foregroundStyle(v > 0 ? Color.up : v < 0 ? Color.down : Color.ink2)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(dark ? (v > 0 ? Color.upLight : v < 0 ? Color.downLight : .white.opacity(0.7)) : (v > 0 ? Color.up : v < 0 ? Color.down : Color.ink2))
+    }
+}
+
+/// Değişim rozeti: koyu zeminde hap şeklinde ▲ %0,03
+struct ChangeChip: View {
+    let v: Double; var size: CGFloat = 11
+    var body: some View {
+        Text((v > 0 ? "▲ " : v < 0 ? "▼ " : "") + Fmt.pct(v))
+            .font(.system(size: size, weight: .bold)).monospacedDigit().lineLimit(1)
+            .foregroundStyle(v > 0 ? Color.upLight : v < 0 ? Color.downLight : .white.opacity(0.8))
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background((v > 0 ? Color.upLight : v < 0 ? Color.downLight : .white).opacity(0.16), in: Capsule())
+    }
+}
+
+/// Döviz kartlarının zemini: koyu zümrüt yeşili, üstte hafif ışık
+struct FxBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(hex: 0x0D3527), Color(hex: 0x1C6446)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            RadialGradient(colors: [.white.opacity(0.16), .clear], center: .topTrailing, startRadius: 0, endRadius: 140)
+            Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 64, weight: .semibold)).foregroundStyle(.white.opacity(0.05))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).offset(x: 8, y: 6)
+        }
+    }
+}
+
+/// Küçük para birimi rozeti ($, €, altın)
+struct CoinBadge: View {
+    let text: String; var gold = false; var size: CGFloat = 18
+    var body: some View {
+        Text(text).font(.system(size: size * 0.58, weight: .heavy, design: .rounded)).foregroundStyle(gold ? Color(hex: 0x5A3B00) : .white)
+            .frame(width: size, height: size)
+            .background(gold ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFFE38A), Color(hex: 0xE0A82E)], startPoint: .top, endPoint: .bottom)) : AnyShapeStyle(Color.white.opacity(0.2)), in: Circle())
+    }
+}
+
+/// Dolar + gram altın kartı (küçük Piyasa widget'ı ve paneldeki döviz kutusu)
+struct FxCard: View {
+    let m: Market; var compact = false; var time: Date? = nil
+    var body: some View {
+        let usd = m.rates["USD"], gra = m.rates["GRA"]
+        VStack(alignment: .leading, spacing: compact ? 3 : 4) {
+            HStack(spacing: 5) {
+                CoinBadge(text: "$", size: compact ? 16 : 18)
+                Text(T("Dolar")).font(.system(size: compact ? 11 : 12, weight: .semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                Spacer(minLength: 0)
+                if let time { Text(Fmt.time(time)).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.6)) }
+            }
+            Text(Fmt.num(usd?.sell ?? 0, 2) + " ₺").font(.system(size: compact ? 20 : 25, weight: .bold, design: .rounded)).monospacedDigit()
+                .foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.6)
+            if let usd { ChangeChip(v: usd.change, size: compact ? 10 : 11) }
+            Spacer(minLength: 2)
+            Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
+            HStack(spacing: 5) {
+                CoinBadge(text: "g", gold: true, size: compact ? 16 : 18)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(T("Gram altın")).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(Fmt.num(gra?.sell ?? 0, 0) + " ₺").font(.system(size: compact ? 13 : 15, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+                        if let gra, !compact { ChangeText(v: gra.change, dark: true).lineLimit(1).minimumScaleFactor(0.7) }
+                    }
+                }
+            }
+            if let gra, compact { ChangeText(v: gra.change, dark: true).lineLimit(1).minimumScaleFactor(0.7) }
+        }
     }
 }
 
@@ -269,14 +340,15 @@ struct MarketProvider: TimelineProvider {
 }
 
 struct RateRow: View {
-    let label: String; let r: Rate?; let digits: Int
+    let label: String; let r: Rate?; let digits: Int; var badge: String = ""; var gold = false
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color.ink2).lineLimit(1)
+        HStack(alignment: .center, spacing: 8) {
+            if !badge.isEmpty { CoinBadge(text: badge, gold: gold, size: 22) }
+            Text(label).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
             Spacer(minLength: 4)
-            VStack(alignment: .trailing, spacing: 0) {
-                Text((r.map { Fmt.num($0.sell, digits) } ?? "—") + " ₺").font(.subheadline.weight(.bold)).monospacedDigit().foregroundStyle(Color.ink).lineLimit(1).minimumScaleFactor(0.7)
-                if let r { ChangeText(v: r.change) }
+            VStack(alignment: .trailing, spacing: 1) {
+                Text((r.map { Fmt.num($0.sell, digits) } ?? "—") + " ₺").font(.subheadline.weight(.bold)).monospacedDigit().foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+                if let r { ChangeText(v: r.change, dark: true) }
             }
         }
     }
@@ -287,26 +359,25 @@ struct MarketView: View {
     let e: MarketEntry
     var body: some View {
         let r = e.m.rates
-        VStack(alignment: .leading, spacing: 6) {
-            HStack { Text(T("Piyasa")).font(.caption.weight(.bold)).foregroundStyle(Color.ink2); Spacer(); Text(Fmt.time(e.date)).font(.caption2).foregroundStyle(Color.ink2) }
+        Group {
             if family == .systemSmall {
-                Text(T("Dolar")).font(.caption.weight(.semibold)).foregroundStyle(Color.ink2)
-                Text(Fmt.num(r["USD"]?.sell ?? 0, 2) + " ₺").font(.system(size: 26, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(Color.ink).minimumScaleFactor(0.6).lineLimit(1)
-                if let u = r["USD"] { ChangeText(v: u.change) }
-                Spacer(minLength: 0)
-                RateRow(label: T("Gram altın"), r: r["GRA"], digits: 0)
+                FxCard(m: e.m, time: e.date)
             } else {
-                RateRow(label: T("Dolar"), r: r["USD"], digits: 4)
-                RateRow(label: T("Euro"), r: r["EUR"], digits: 4)
-                RateRow(label: T("Gram altın"), r: r["GRA"], digits: 2)
-                if family == .systemLarge {
-                    RateRow(label: T("Sterlin"), r: r["GBP"], digits: 4)
-                    RateRow(label: T("Çeyrek altın"), r: r["CEYREKALTIN"], digits: 2)
-                    RateRow(label: T("Gümüş"), r: r["GUMUS"], digits: 2)
+                VStack(alignment: .leading, spacing: family == .systemLarge ? 9 : 5) {
+                    HStack { Text(T("Piyasa")).font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.85)); Spacer(); Text(Fmt.time(e.date)).font(.caption2).foregroundStyle(.white.opacity(0.6)) }
+                    RateRow(label: T("Dolar"), r: r["USD"], digits: 4, badge: "$")
+                    RateRow(label: T("Euro"), r: r["EUR"], digits: 4, badge: "€")
+                    RateRow(label: T("Gram altın"), r: r["GRA"], digits: 2, badge: "g", gold: true)
+                    if family == .systemLarge {
+                        RateRow(label: T("Sterlin"), r: r["GBP"], digits: 4, badge: "£")
+                        RateRow(label: T("Çeyrek altın"), r: r["CEYREKALTIN"], digits: 2, badge: "¼", gold: true)
+                        RateRow(label: T("Gümüş"), r: r["GUMUS"], digits: 2, badge: "Ag")
+                        Spacer(minLength: 0)
+                    }
                 }
             }
         }
-        .containerBackground(for: .widget) { Color.fxBg }
+        .containerBackground(for: .widget) { FxBackground() }
     }
 }
 
@@ -493,53 +564,56 @@ struct PanelView: View {
     let e: PanelEntry
     var body: some View {
         let r = e.m.rates
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(spacing: 6) {
+            HStack(spacing: 6) {
                 // Namaz
                 VStack(alignment: .leading, spacing: 2) {
                     Text(e.p.targetName).font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                    if let t = e.p.target { Countdown(from: e.date, to: t, size: 21) }
+                    if let t = e.p.target { Countdown(from: e.date, to: t, size: 22) }
                     Spacer(minLength: 0)
                     PrayerProgress(s: e.p)
                     Text(e.p.city).font(.caption2).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
                 }
                 .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(PrayerSky(phase: e.p.phase, ramadan: e.p.ramadan, mosqueScale: 0.5).clipShape(RoundedRectangle(cornerRadius: 14)))
+                .background(PrayerSky(phase: e.p.phase, ramadan: e.p.ramadan, mosqueScale: 0.5).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
                 // Hava
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Image(systemName: WX.symbol(e.w.code, day: e.w.isDay)).symbolRenderingMode(.multicolor)
-                        Text("\(Int(e.w.temp.rounded()))°").font(.system(size: 22, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                    HStack(alignment: .top, spacing: 2) {
+                        Text("\(Int(e.w.temp.rounded()))°").font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+                        Spacer(minLength: 0)
+                        Image(systemName: WX.symbol(e.w.code, day: e.w.isDay)).symbolRenderingMode(.multicolor).font(.system(size: 24))
+                            .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
                     }
+                    Text(WX.desc(e.w.code)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.9)).lineLimit(2).minimumScaleFactor(0.8)
                     Spacer(minLength: 0)
-                    Text(WX.desc(e.w.code)).font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.9)).lineLimit(1)
-                    Text("↑\(Int(e.w.max.rounded()))° ↓\(Int(e.w.min.rounded()))°").font(.caption2).foregroundStyle(.white.opacity(0.75)).lineLimit(1)
+                    if let pop = e.w.pop, pop >= 10 {
+                        Label("%\(pop)", systemImage: "drop.fill").font(.system(size: 10, weight: .bold)).foregroundStyle(Color(hex: 0xBFE1FF)).labelStyle(.titleAndIcon).lineLimit(1)
+                    }
+                    HStack(spacing: 6) {
+                        Text("↑\(Int(e.w.max.rounded()))°").foregroundStyle(.white)
+                        Text("↓\(Int(e.w.min.rounded()))°").foregroundStyle(.white.opacity(0.7))
+                    }.font(.system(size: 11, weight: .bold)).lineLimit(1)
                 }
                 .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(wxGradient(e.w.code, day: e.w.isDay), in: RoundedRectangle(cornerRadius: 14))
+                .background(wxGradient(e.w.code, day: e.w.isDay), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 if family == .systemMedium {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(T("Dolar")).font(.caption2.weight(.semibold)).foregroundStyle(Color.ink2)
-                        Text(Fmt.num(r["USD"]?.sell ?? 0, 2)).font(.system(size: 20, weight: .bold, design: .rounded)).monospacedDigit().foregroundStyle(Color.ink).lineLimit(1).minimumScaleFactor(0.6)
-                        Spacer(minLength: 0)
-                        Text(T("Gram altın")).font(.caption2.weight(.semibold)).foregroundStyle(Color.ink2)
-                        Text(Fmt.num(r["GRA"]?.sell ?? 0, 0)).font(.subheadline.weight(.bold)).monospacedDigit().foregroundStyle(Color.ink).lineLimit(1).minimumScaleFactor(0.6)
-                    }
-                    .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .background(Color.fxBg, in: RoundedRectangle(cornerRadius: 14))
+                    FxCard(m: e.m, compact: true)
+                        .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .background(FxBackground().clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
                 }
             }
             if family == .systemLarge {
-                VStack(spacing: 4) {
-                    RateRow(label: T("Dolar"), r: r["USD"], digits: 4)
-                    RateRow(label: T("Euro"), r: r["EUR"], digits: 4)
-                    RateRow(label: T("Sterlin"), r: r["GBP"], digits: 4)
-                    RateRow(label: T("Çeyrek altın"), r: r["CEYREKALTIN"], digits: 2)
-                    RateRow(label: T("Gram altın"), r: r["GRA"], digits: 2)
+                VStack(spacing: 5) {
+                    RateRow(label: T("Dolar"), r: r["USD"], digits: 4, badge: "$")
+                    RateRow(label: T("Euro"), r: r["EUR"], digits: 4, badge: "€")
+                    RateRow(label: T("Sterlin"), r: r["GBP"], digits: 4, badge: "£")
+                    RateRow(label: T("Çeyrek altın"), r: r["CEYREKALTIN"], digits: 2, badge: "¼", gold: true)
+                    RateRow(label: T("Gram altın"), r: r["GRA"], digits: 2, badge: "g", gold: true)
                 }
-                .padding(10).background(Color.fxBg, in: RoundedRectangle(cornerRadius: 14))
+                .padding(12).background(FxBackground().clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
             }
         }
+        .padding(8)
         .containerBackground(for: .widget) { Color.panelBg }
     }
 }
@@ -549,6 +623,7 @@ struct PanelWidget: Widget {
         StaticConfiguration(kind: "panel", provider: PanelProvider()) { e in
             PanelView(e: e).widgetURL(URL(string: "rahimov://panel"))
         }
+        .contentMarginsDisabled()
         .configurationDisplayName(T("Günlük panel"))
         .description(T("Namaz, hava ve döviz bir arada."))
         .supportedFamilies([.systemMedium, .systemLarge])

@@ -115,7 +115,7 @@
   var API = {
     fin: 'https://finans.truncgil.com/v4/today.json',
     fxSeries: function (base, start) { return 'https://api.frankfurter.dev/v1/' + start + '..?base=' + base + '&symbols=TRY'; },
-    wx: function (c) { return 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=7'; },
+    wx: function (c) { return 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon + '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,is_day&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max,uv_index_max&timezone=auto&forecast_days=7'; },
     geo: function (q) { return 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=8&language=' + LANG; },
     quake: 'https://api.orhanaydogdu.com.tr/deprem/kandilli/live?limit=100',
     pray: function (c, d) { return 'https://api.aladhan.com/v1/timings/' + d + '?latitude=' + c.lat + '&longitude=' + c.lon + '&method=13'; },
@@ -179,21 +179,47 @@
   }
 
   /* ---------- Hava durumu kodları ---------- */
+  var CLOUD = '<path class="c" d="M7 18.5h10.2a4.3 4.3 0 0 0 .5-8.6A6.3 6.3 0 0 0 5.6 11.4 3.6 3.6 0 0 0 7 18.5z"/>';
+  var CLOUD_HI = '<path class="c" d="M7 14.5h10.2a4.1 4.1 0 0 0 .5-8.2A6 6 0 0 0 5.8 7.8 3.4 3.4 0 0 0 7 14.5z"/>';
   var WX_ICON = {
-    sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
-    moon: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
-    partly: '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M8 2v1M2 8h1M3.8 3.8l.7.7M12.2 3.8l-.7.7M9 19h8a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.6A3.3 3.3 0 0 0 9 19z"/></svg>',
-    cloud: '<svg viewBox="0 0 24 24"><path d="M7 18h10a4.5 4.5 0 0 0 .6-9A6.5 6.5 0 0 0 5.2 10.8 3.7 3.7 0 0 0 7 18z"/></svg>',
-    fog: '<svg viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 6.6 3.4 3.4 0 0 0 7 13zM4 17h16M6 21h12"/></svg>',
-    rain: '<svg viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7.6 3.4 3.4 0 0 0 7 14zM8 18l-1 3M12 18l-1 3M16 18l-1 3"/></svg>',
-    snow: '<svg viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7.6 3.4 3.4 0 0 0 7 14zM8 18v.01M12 20v.01M16 18v.01M10 22v.01M14 22v.01"/></svg>',
-    storm: '<svg viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7.6 3.4 3.4 0 0 0 7 14zM13 15l-3 4h4l-3 4"/></svg>'
+    sun: '<svg viewBox="0 0 24 24"><g class="s"><circle cx="12" cy="12" r="4.6"/><path d="M12 2.5v2.2M12 19.3v2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M2.5 12h2.2M19.3 12h2.2M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></g></svg>',
+    moon: '<svg viewBox="0 0 24 24"><path class="m" d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.3 6.3 0 0 0 10.1 10.1z"/><path class="st" d="M17 4.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/></svg>',
+    partly: '<svg viewBox="0 0 24 24"><g class="s"><circle cx="8.5" cy="8.5" r="3.4"/><path d="M8.5 2.3v1.3M2.3 8.5h1.3M4.1 4.1l.9.9M12.9 4.1l-.9.9"/></g>' + CLOUD.replace('M7 18.5', 'M8.5 19.5').replace('a4.3 4.3 0 0 0 .5-8.6A6.3 6.3 0 0 0 5.6 11.4 3.6 3.6 0 0 0 7 18.5z', 'a4 4 0 0 0 .5-8 5.8 5.8 0 0 0-11 1.6 3.3 3.3 0 0 0 .3 6.4z') + '</svg>',
+    partlyNight: '<svg viewBox="0 0 24 24"><path class="m" d="M13.2 8.6A5.4 5.4 0 1 1 6.2 2.6a4.4 4.4 0 0 0 7 6z"/><path class="c" d="M8.5 19.5h9.2a4 4 0 0 0 .5-8 5.8 5.8 0 0 0-11 1.6 3.3 3.3 0 0 0 .3 6.4z"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24"><path class="c2" d="M13 9.5h6.5a3 3 0 0 0 .3-6 4.3 4.3 0 0 0-8.1 1.1"/>' + CLOUD + '</svg>',
+    fog: '<svg viewBox="0 0 24 24">' + CLOUD_HI + '<path class="f" d="M4 17.5h16M6 21h12"/></svg>',
+    rain: '<svg viewBox="0 0 24 24">' + CLOUD_HI + '<path class="r" d="M8.5 17.5l-1.2 3.2M12.5 17.5l-1.2 3.2M16.5 17.5l-1.2 3.2"/></svg>',
+    snow: '<svg viewBox="0 0 24 24">' + CLOUD_HI + '<g class="sn"><circle cx="8" cy="18.5" r="1.1"/><circle cx="12" cy="20.5" r="1.1"/><circle cx="16" cy="18.5" r="1.1"/><circle cx="10" cy="22.3" r=".9"/><circle cx="14" cy="22.3" r=".9"/></g></svg>',
+    storm: '<svg viewBox="0 0 24 24">' + CLOUD_HI.replace('class="c"', 'class="c dk"') + '<path class="b" d="M12.8 13.2l-3.3 4.8h3.4l-2.2 4.6 5.4-6.4h-3.4l2-3z"/></svg>',
+    wind: '<svg viewBox="0 0 24 24"><path class="w" d="M3 9h11.5a3 3 0 1 0-3-3M3 13.5h15.5a3 3 0 1 1-3 3M3 18h7"/></svg>'
   };
+  /* Bilgi satırları için tek renk çizgi ikonları */
+  var MI = {
+    hum: '<svg viewBox="0 0 24 24"><path d="M12 3s6 6.4 6 10.6A6 6 0 0 1 6 13.6C6 9.4 12 3 12 3z"/></svg>',
+    wind: '<svg viewBox="0 0 24 24"><path d="M3 9h11.5a3 3 0 1 0-3-3M3 13.5h15.5a3 3 0 1 1-3 3M3 18h7"/></svg>',
+    rain: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 18 0zM12 12v7a2 2 0 0 0 4 0"/></svg>',
+    rise: '<svg viewBox="0 0 24 24"><path d="M7 16a5 5 0 0 1 10 0M2 19h20M12 4v5M9.5 6.5L12 4l2.5 2.5M4.5 11l1.4 1.4M19.5 11l-1.4 1.4"/></svg>',
+    set: '<svg viewBox="0 0 24 24"><path d="M7 16a5 5 0 0 1 10 0M2 19h20M12 4v5M9.5 6.5L12 9l2.5-2.5M4.5 11l1.4 1.4M19.5 11l-1.4 1.4"/></svg>',
+    temp: '<svg viewBox="0 0 24 24"><path d="M10 13.5V5a2 2 0 0 1 4 0v8.5a4 4 0 1 1-4 0zM12 9v7"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24"><path d="M12 4v16M6 14l6 6 6-6"/></svg>',
+    drop: '<svg viewBox="0 0 24 24"><path d="M12 3s6 6.4 6 10.6A6 6 0 0 1 6 13.6C6 9.4 12 3 12 3z"/></svg>',
+    uv: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+  };
+  function mi(n, st) { return '<span class="mi"' + (st ? ' style="' + st + '"' : '') + ' aria-hidden="true">' + MI[n] + '</span>'; }
+  /* Gökyüzü teması: hava kartı ve saatlik kutuların arka planı */
+  function sky(code, isDay) {
+    if (code >= 95) return 'storm';
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+    if (code >= 51) return isDay ? 'rain' : 'rain-n';
+    if (code === 45 || code === 48) return 'fog';
+    if (code === 3) return isDay ? 'cloud' : 'cloud-n';
+    return isDay ? (code === 2 ? 'partly' : 'clear') : 'night';
+  }
   function wx(code, isDay) {
     var d = isDay === undefined || isDay ? 1 : 0;
     if (code === 0) return [L('Açık'), d ? 'sun' : 'moon'];
-    if (code === 1) return [L('Az bulutlu'), d ? 'partly' : 'moon'];
-    if (code === 2) return [L('Parçalı bulutlu'), d ? 'partly' : 'cloud'];
+    if (code === 1) return [L('Az bulutlu'), d ? 'partly' : 'partlyNight'];
+    if (code === 2) return [L('Parçalı bulutlu'), d ? 'partly' : 'partlyNight'];
     if (code === 3) return [L('Kapalı'), 'cloud'];
     if (code === 45 || code === 48) return [L('Sisli'), 'fog'];
     if (code >= 51 && code <= 55) return [L('Çisenti'), 'rain'];
@@ -717,21 +743,39 @@
     initCity(function (c) {
       setText('#wx-city', c.name);
       getJSON(API.wx(c), 900).then(function (j) {
-        var cur = j.current, w = wx(cur.weather_code, cur.is_day);
-        var sr = j.daily.sunrise[0].slice(11, 16), ss = j.daily.sunset[0].slice(11, 16);
-        $('#wx-now').innerHTML = wxIcon(w[1]) +
-          '<div><div class="wx-temp num">' + Math.round(cur.temperature_2m) + '°</div><div class="tile-sub">' + w[0] + ' · ' + L('hissedilen') + ' ' + Math.round(cur.apparent_temperature) + '°</div></div>' +
-          '<dl class="wx-meta"><div><dt>' + L('Nem') + '</dt><dd>' + pc(cur.relative_humidity_2m) + '</dd></div><div><dt>' + L('Rüzgâr') + '</dt><dd>' + Math.round(cur.wind_speed_10m) + ' ' + L('km/sa') + '</dd></div><div><dt>' + L('Yağış ihtimali') + '</dt><dd>' + (j.daily.precipitation_probability_max[0] == null ? '—' : pc(j.daily.precipitation_probability_max[0])) + '</dd></div><div><dt>' + L('Gün doğumu') + '</dt><dd>' + sr + '</dd></div><div><dt>' + L('Gün batımı') + '</dt><dd>' + ss + '</dd></div><div><dt>' + L('En düşük / yüksek') + '</dt><dd>' + Math.round(j.daily.temperature_2m_min[0]) + '° / ' + Math.round(j.daily.temperature_2m_max[0]) + '°</dd></div></dl>';
+        var cur = j.current, w = wx(cur.weather_code, cur.is_day), D = j.daily;
+        var sr = D.sunrise[0].slice(11, 16), ss = D.sunset[0].slice(11, 16);
+        var windy = cur.wind_speed_10m >= 30 || (cur.wind_gusts_10m || 0) >= 50;
+        var pop0 = D.precipitation_probability_max[0], uv = D.uv_index_max ? D.uv_index_max[0] : null;
+        var hero = $('#wx-hero'); if (hero) hero.setAttribute('data-sky', sky(cur.weather_code, cur.is_day));
+        function cell(icon, label, val, cls) { return '<div' + (cls ? ' class="' + cls + '"' : '') + '>' + icon + '<dt>' + label + '</dt><dd>' + val + '</dd></div>'; }
+        $('#wx-now').innerHTML = '<div class="wx-main">' + wxIcon(w[1]) +
+          '<div><div class="wx-temp num">' + Math.round(cur.temperature_2m) + '°</div><div class="wx-desc">' + w[0] + ' · ' + L('hissedilen') + ' ' + Math.round(cur.apparent_temperature) + '°</div>' +
+          (windy ? '<span class="wx-badge">' + mi('wind') + L('Rüzgârlı') + '</span>' : '') + '</div></div>' +
+          '<dl class="wx-meta">' +
+          cell(mi('hum'), L('Nem'), pc(cur.relative_humidity_2m)) +
+          cell(mi('wind'), L('Rüzgâr'), Math.round(cur.wind_speed_10m) + ' ' + L('km/sa') + ' ' + mi('arrow', 'transform:rotate(' + Math.round(cur.wind_direction_10m || 0) + 'deg)'), windy ? 'hot' : '') +
+          cell(mi('rain'), L('Yağış ihtimali'), pop0 == null ? '—' : pc(pop0), pop0 >= 50 ? 'hot' : '') +
+          cell(mi('rise'), L('Gün doğumu'), sr) +
+          cell(mi('set'), L('Gün batımı'), ss) +
+          (uv != null ? cell(mi('uv'), L('UV indeksi'), Math.round(uv), uv >= 6 ? 'hot' : '') : cell(mi('temp'), L('En düşük / yüksek'), Math.round(D.temperature_2m_min[0]) + '° / ' + Math.round(D.temperature_2m_max[0]) + '°')) +
+          '</dl>';
         var start = j.hourly.time.indexOf(cur.time.slice(0, 13) + ':00'); if (start < 0) start = 0;
-        var hrs = '';
-        for (var i = start; i < start + 24 && i < j.hourly.time.length; i++) {
-          var hh = +j.hourly.time[i].slice(11, 13), night = hh < +sr.slice(0, 2) || hh > +ss.slice(0, 2);
-          hrs += '<div class="hour"><span class="muted">' + j.hourly.time[i].slice(11, 16) + '</span>' + wxIcon(wx(j.hourly.weather_code[i], !night)[1]) + '<b class="num">' + Math.round(j.hourly.temperature_2m[i]) + '°</b><span class="muted">' + (j.hourly.precipitation_probability[i] == null ? '—' : pc(j.hourly.precipitation_probability[i])) + '</span></div>';
+        var hrs = '', H = j.hourly;
+        for (var i = start; i < start + 24 && i < H.time.length; i++) {
+          var isDay = H.is_day ? H.is_day[i] : 1, hw = wx(H.weather_code[i], isDay), pp = H.precipitation_probability[i], ws = H.wind_speed_10m ? H.wind_speed_10m[i] : 0;
+          hrs += '<div class="hour" data-sky="' + sky(H.weather_code[i], isDay) + '"><span class="h-t">' + (i === start ? L('Şimdi') : H.time[i].slice(11, 16)) + '</span>' + wxIcon(hw[1]) + '<b class="num">' + Math.round(H.temperature_2m[i]) + '°</b>' +
+            '<span class="h-p' + (pp >= 30 ? ' on' : '') + '">' + mi('drop') + (pp == null ? '—' : pc(pp)) + '</span>' +
+            (ws >= 25 ? '<span class="h-w">' + mi('wind') + Math.round(ws) + '</span>' : '') + '</div>';
         }
         $('#wx-hours').innerHTML = hrs;
-        $('#wx-days').innerHTML = j.daily.time.map(function (t, k) {
-          var d = new Date(t + 'T12:00:00'), dw = wx(j.daily.weather_code[k], 1);
-          return '<li><b>' + (k === 0 ? L('Bugün') : DAYS[d.getDay()]) + '</b>' + wxIcon(dw[1]) + '<span class="desc">' + dw[0] + ' · ' + L('yağış') + ' ' + (j.daily.precipitation_probability_max[k] == null ? '—' : pc(j.daily.precipitation_probability_max[k])) + '</span><span class="num"><b>' + Math.round(j.daily.temperature_2m_max[k]) + '°</b> <span class="muted">' + Math.round(j.daily.temperature_2m_min[k]) + '°</span></span></li>';
+        var lo = Math.min.apply(null, D.temperature_2m_min), hi = Math.max.apply(null, D.temperature_2m_max), span = Math.max(1, hi - lo);
+        $('#wx-days').innerHTML = D.time.map(function (t, k) {
+          var d = new Date(t + 'T12:00:00'), dw = wx(D.weather_code[k], 1), mn = D.temperature_2m_min[k], mx = D.temperature_2m_max[k], pp = D.precipitation_probability_max[k];
+          var wk = D.wind_speed_10m_max && D.wind_speed_10m_max[k] >= 35;
+          return '<li><div class="d-n"><b>' + (k === 0 ? L('Bugün') : DAYS[d.getDay()]) + '</b><span class="desc">' + dw[0] + (wk ? ' · ' + L('Rüzgârlı') : '') + '</span></div>' +
+            '<div class="d-i">' + wxIcon(dw[1]) + (pp >= 20 ? '<span class="d-p">' + pc(pp) + '</span>' : '') + '</div>' +
+            '<div class="d-r"><span class="muted num">' + Math.round(mn) + '°</span><span class="bar"><i style="left:' + ((mn - lo) / span * 100).toFixed(1) + '%;right:' + ((hi - mx) / span * 100).toFixed(1) + '%"></i></span><b class="num">' + Math.round(mx) + '°</b></div></li>';
         }).join('');
         box.hidden = false; $('#wx-err').innerHTML = '';
       }).catch(function () { box.hidden = true; fail($('#wx-err'), function () { location.reload(); }); });
@@ -781,6 +825,21 @@
   /* ---------- Namaz vakitleri ---------- */
   var HIJRI = ['Muharrem', 'Safer', 'Rebiülevvel', 'Rebiülahir', 'Cemaziyelevvel', 'Cemaziyelahir', 'Recep', 'Şaban', 'Ramazan', 'Şevval', 'Zilkade', 'Zilhicce'].map(function (m) { return L('hicri:' + m) === 'hicri:' + m ? m : L('hicri:' + m); });
   var PR = [['Imsak', 'İmsak'], ['Sunrise', 'Güneş'], ['Dhuhr', 'Öğle'], ['Asr', 'İkindi'], ['Maghrib', 'Akşam'], ['Isha', 'Yatsı']];
+  /* Vakte göre küçük gökyüzü sahnesi: güneş/ay/yıldız + cami silueti */
+  var PKEY = ['imsak', 'gunes', 'ogle', 'ikindi', 'aksam', 'yatsi'];
+  var MOSQUE = '<path class="mq" d="M0 100V92h18V78l1.6-6 1.6 6v14h9v-5a8 8 0 0 1 16 0v5h4v-6a19 19 0 0 1 38 0v6h4v-5a8 8 0 0 1 16 0v5h3V78l1.6-6 1.6 6v14H140v8z"/>';
+  function stars(list) { return list.map(function (x) { return '<circle class="star" cx="' + x[0] + '" cy="' + x[1] + '" r="' + (x[2] || .9) + '"/>'; }).join(''); }
+  function sunG(cx, cy, r, glow) { return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 2.4) + '" fill="' + glow + '" opacity=".28"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 1.6) + '" fill="' + glow + '" opacity=".35"/><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#FFE7A3"/>'; }
+  function moonG(cx, cy, r) { return '<path fill="#F4EBC8" d="M' + (cx + r * .3) + ' ' + (cy - r) + 'a' + r + ' ' + r + ' 0 1 0 ' + (r * .7) + ' ' + (r * 1.75) + 'a' + (r * .85) + ' ' + (r * .85) + ' 0 1 1-' + (r * .7) + '-' + (r * 1.75) + 'z"/>'; }
+  var PRAY_ART = {
+    imsak: stars([[18, 14], [40, 8, 1.2], [70, 20], [96, 10], [120, 18, 1.2], [128, 6], [56, 30, .7]]) + moonG(108, 30, 9),
+    gunes: sunG(70, 86, 11, '#FFC27A'),
+    ogle: sunG(112, 15, 6, '#FFF2B8'),
+    ikindi: sunG(113, 72, 6, '#FFD08A'),
+    aksam: sunG(70, 82, 13, '#FF9A5C'),
+    yatsi: stars([[14, 12, 1.2], [34, 26], [52, 8], [80, 16, 1.2], [92, 34, .7], [126, 10], [118, 30]]) + moonG(104, 26, 10)
+  };
+  Object.keys(PRAY_ART).forEach(function (k) { PRAY_ART[k] = '<svg class="pray-art" viewBox="0 0 140 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' + PRAY_ART[k] + MOSQUE + '</svg>'; });
   function namaz() {
     var tick, grid = $('#pray-grid');
     initCity(function (c) {
@@ -795,7 +854,8 @@
           var n = new Date(), cur = n.getHours() * 60 + n.getMinutes(), next = -1;
           PR.forEach(function (p, i) { var a = t[p[0]].slice(0, 5).split(':'); if (next < 0 && +a[0] * 60 + +a[1] > cur) next = i; });
           grid.innerHTML = PR.map(function (p, i) {
-            return '<div class="card pray' + (i === next ? ' is-next' : '') + '"><small>' + L(p[1]) + '</small><b>' + t[p[0]].slice(0, 5) + '</b></div>';
+            var k = PKEY[i], past = next < 0 || i < next;
+            return '<div class="pray" data-p="' + k + '"' + (i === next ? ' data-next' : past ? ' data-past' : '') + '>' + PRAY_ART[k] + '<small>' + L(p[1]) + '</small><b>' + t[p[0]].slice(0, 5) + '</b>' + (i === next ? '<em>' + L('Sıradaki') + '</em>' : '') + '</div>';
           }).join('');
           if (next < 0) { setText('#pray-next', L('Bugünün vakitleri tamamlandı. Yarının imsak vakti için aşağıdaki aylık tabloya bak.')); return; }
           var a = t[PR[next][0]].slice(0, 5).split(':'), left = (+a[0] * 60 + +a[1]) * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds());

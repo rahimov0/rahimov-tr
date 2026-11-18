@@ -508,8 +508,8 @@ PAGES["/hava-durumu/"] = dict(page="hava", title="Hava durumu — Anlık, saatli
   {CITYBAR}
   <div id="wx-err"></div>
   <div id="wx-box" hidden>
-    <div class="card" style="margin-bottom:16px">
-      <p class="tile-label" style="margin-bottom:12px"><span id="wx-city">—</span><span>Şu an</span></p>
+    <div class="card wx-hero" id="wx-hero" style="margin-bottom:16px">
+      <p class="tile-label" style="margin-bottom:12px;position:relative;z-index:1"><span id="wx-city">—</span><span>Şu an</span></p>
       <div class="wx-now" id="wx-now"></div>
     </div>
     <h2 style="font-size:22px;line-height:28px;margin:32px 0 12px">Önümüzdeki 24 saat</h2>
