@@ -1,5 +1,9 @@
 import json,sys
 S = {
+"Bulunduğum yeri kullan": ("Use my current location","Использовать моё местоположение","Olduğum yeri istifadə et"),
+"Uygulamayı her açtığında bulunduğun yere göre güncellenir.": ("Updates to where you are each time you open the app.","Обновляется по вашему местоположению при каждом открытии приложения.","Tətbiqi hər açanda olduğun yerə görə yenilənir."),
+"Elle seçtiğin şehir kullanılıyor. Otomatik için “Bulunduğum yeri kullan”ı aç.": ("Using the city you chose. Turn on “Use my current location” for automatic.","Используется выбранный вами город. Для автоматического режима включите «Использовать моё местоположение».","Seçdiyin şəhər istifadə olunur. Avtomatik üçün “Olduğum yeri istifadə et”i aç."),
+"Kapat": ("Close","Закрыть","Bağla"),
 "Veri kaynakları": ("Data sources","Источники данных","Məlumat mənbələri"),
 "Veriler bilgilendirme amaçlıdır; yatırım tavsiyesi değildir. Lisanslar ve ayrıntılar için kaynağa dokun.": ("Data is for information only and is not investment advice. Tap a source for licences and details.","Данные носят информационный характер и не являются инвестиционной рекомендацией. Нажмите на источник, чтобы узнать о лицензии.","Məlumatlar informasiya xarakterlidir, investisiya tövsiyəsi deyil. Lisenziya üçün mənbəyə toxunun."),
 "Döviz ve altın fiyatları": ("Currency and gold prices","Курсы валют и цены на золото","Valyuta və qızıl qiymətləri"),

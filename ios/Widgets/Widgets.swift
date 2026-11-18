@@ -83,7 +83,7 @@ struct NamazProvider: TimelineProvider {
     func getSnapshot(in context: Context, completion: @escaping (NamazEntry) -> Void) { completion(placeholder(in: context)) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<NamazEntry>) -> Void) {
         Task {
-            let city = Store.city
+            let city = await WidgetCity.resolve()
             let days = (try? await API.prayerDays(city, days: 3)) ?? []
             let now = Date()
             var points = [now]
@@ -343,7 +343,7 @@ struct WeatherProvider: TimelineProvider {
     func getSnapshot(in context: Context, completion: @escaping (WeatherEntry) -> Void) { completion(placeholder(in: context)) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<WeatherEntry>) -> Void) {
         Task {
-            let c = Store.city
+            let c = await WidgetCity.resolve()
             let w = (try? await API.weather(c)) ?? API.cachedWeather ?? .placeholder
             completion(Timeline(entries: [WeatherEntry(date: Date(), w: w, city: c.name)], policy: .after(Date().addingTimeInterval(30 * 60))))
         }
@@ -472,7 +472,7 @@ struct PanelProvider: TimelineProvider {
     func getSnapshot(in context: Context, completion: @escaping (PanelEntry) -> Void) { completion(placeholder(in: context)) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<PanelEntry>) -> Void) {
         Task {
-            let c = Store.city
+            let c = await WidgetCity.resolve()
             async let m = try? API.market()
             async let w = try? API.weather(c)
             async let d = try? API.prayerDays(c, days: 2)
@@ -562,5 +562,22 @@ struct RahimovWidgets: WidgetBundle {
         NamazWidget()
         DovizWidget()
         HavaWidget()
+    }
+}
+
+
+/// Otomatik konumdaysa widget kendi konumunu alır (kullanıcı widget'lar için konuma izin verdiyse)
+enum WidgetCity {
+    static func resolve() async -> City {
+        let stored = Store.city
+        guard Store.autoLocation else { return stored }
+        let o = await MainActor.run { OneShotLocation() }
+        let ok = await MainActor.run { o.authorizedForWidgets }
+        guard ok, let l = await o.get(timeout: 6) else { return stored }
+        let here = City(name: stored.name, lat: l.coordinate.latitude, lon: l.coordinate.longitude)
+        if stored.distance(to: here) < 800 { return stored }
+        let named = await Geo.city(from: l)
+        Store.city = named
+        return named
     }
 }

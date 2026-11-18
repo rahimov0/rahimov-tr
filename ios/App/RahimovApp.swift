@@ -18,12 +18,13 @@ struct RahimovApp: App {
                     }
                 }
                 .task {
+                    AutoLocation.shared.refresh()
                     await Notif.reschedule()
                     scheduleRefresh()
                 }
         }
         .onChange(of: phase) { _, p in
-            if p == .active { Task { await Notif.reschedule(); WidgetCenter.shared.reloadAllTimelines() } }
+            if p == .active { AutoLocation.shared.refresh(); Task { await Notif.reschedule(); WidgetCenter.shared.reloadAllTimelines() } }
             if p == .background { scheduleRefresh() }
         }
         .backgroundTask(.appRefresh("tr.rahimov.app.refresh")) {
@@ -44,6 +45,7 @@ struct RootView: View {
     @Binding var tab: String
     @State private var market = "doviz"
     @State private var morePath: [String] = []
+    @State private var showCity = false
 
     var body: some View {
         // Seçili sekmeye tekrar dokununca sekme kendi ana sayfasına döner
@@ -67,6 +69,8 @@ struct RootView: View {
                 .tabItem { Label(T("Daha fazla"), systemImage: "ellipsis.circle.fill") }.tag("daha")
         }
         .tint(Color(red: 0.76, green: 0.25, blue: 0.05))
+        .sheet(isPresented: $showCity) { CityPickerSheet() }
+        .onReceive(NotificationCenter.default.publisher(for: .pickCity)) { _ in showCity = true }
         .onReceive(NotificationCenter.default.publisher(for: .switchTab)) { n in
             guard let t = n.object as? String else { return }
             let parts = t.split(separator: ":").map(String.init)

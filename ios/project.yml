@@ -61,6 +61,8 @@ targets:
         CFBundleDisplayName: KROV
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSWidgetWantsLocation: true
+        NSLocationWhenInUseUsageDescription: "Widget'ların bulunduğun yerin hava durumunu ve namaz vakitlerini göstermesi için kullanılır."
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

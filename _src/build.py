@@ -175,7 +175,7 @@ def other_tools(exclude):
     return f'<section class="section web-only"><div class="wrap"><div class="section-head"><h2>Diğer araçlar</h2></div><div class="grid g3">{tool_cards(exclude)}</div></div></section>'
 
 
-CITYBAR = """<div class="citybar">
+CITYBAR = """<div class="city-pick"><div class="citybar">
   <div class="field"><label for="cityInput">Şehir ya da ilçe ara</label>
     <input class="input" id="cityInput" type="search" placeholder="Örn. Kadıköy, Ankara, Bakü…" autocomplete="off">
     <div class="suggest" id="citySuggest" hidden></div></div>
@@ -188,7 +188,7 @@ CITYBAR = """<div class="citybar">
   <button class="chip city-chip" type="button" data-lat="40.1885" data-lon="29.0610">Bursa</button>
   <button class="chip city-chip" type="button" data-lat="36.8969" data-lon="30.7133">Antalya</button>
   <button class="chip city-chip" type="button" data-lat="37.0000" data-lon="35.3213">Adana</button>
-</div>"""
+</div></div>"""
 
 SK = '<span class="skeleton">00,0000</span>'
 

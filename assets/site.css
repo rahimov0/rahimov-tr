@@ -634,7 +634,7 @@ footer { border-top: 1px solid var(--line); padding: 48px 0 56px; margin-top: 8p
 /* iOS uygulaması içinde: alt sekme çubuğu menünün işini görür */
 .in-app header.nav{display:none}
 
-.in-app .crumbs,.in-app footer,.in-app .web-only,.in-app .prose,.in-app .faq,.in-app .page-head .lead,.in-app .home-gap,.in-app .langsw,.in-app .skip-link{display:none!important}
+.in-app .city-pick,.in-app .citypop-body,.in-app .crumbs,.in-app footer,.in-app .web-only,.in-app .prose,.in-app .faq,.in-app .page-head .lead,.in-app .home-gap,.in-app .langsw,.in-app .skip-link{display:none!important}
 .app-back{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line,rgba(0,0,0,.08))}
 .app-back button{display:flex;align-items:center;gap:4px;font:600 16px/1 inherit;color:var(--accent,#C2410C);background:none;border:0;padding:12px 14px;cursor:pointer}
 .in-app ins.adsbygoogle{display:none!important}
@@ -648,3 +648,9 @@ footer { border-top: 1px solid var(--line); padding: 48px 0 56px; margin-top: 8p
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .more-btn{background:rgba(251,146,60,.14);color:#FB923C}}
 [data-theme=dark] .more-btn{background:rgba(251,146,60,.14);color:#FB923C}
 @media (max-width: 720px){ .rtable tr.more-row{display:block} .rtable .more-row td{text-align:center;display:block} }
+
+/* Uygulama: şehir düğmesi */
+.app-city{display:none}
+.in-app .app-city{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;margin:0 0 16px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--text);font:700 15px/1 inherit;cursor:pointer}
+/* Mobil: şehir penceresi ekrandan taşmasın */
+@media (max-width: 680px) { .today { position: relative; } .citypop { position: static; } .citypop-body { left: 0; right: 0; width: auto; } }

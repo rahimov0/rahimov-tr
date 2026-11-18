@@ -12,6 +12,12 @@ struct City: Codable, Equatable {
     var lat: Double
     var lon: Double
     static let istanbul = City(name: "İstanbul", lat: 41.0082, lon: 28.9784)
+    func distance(to o: City) -> Double {   // metre, yaklaşık
+        let r = 6_371_000.0, p = Double.pi / 180
+        let dLat = (o.lat - lat) * p, dLon = (o.lon - lon) * p
+        let a = sin(dLat / 2) * sin(dLat / 2) + cos(lat * p) * cos(o.lat * p) * sin(dLon / 2) * sin(dLon / 2)
+        return 2 * r * asin(min(1, sqrt(a)))
+    }
 }
 
 enum Store {
@@ -21,6 +27,11 @@ enum Store {
             return .istanbul
         }
         set { AppGroup.defaults.set(try? JSONEncoder().encode(newValue), forKey: "city") }
+    }
+    /// Otomatik konum: kullanıcı elle şehir seçmediyse bulunduğu yer kullanılır
+    static var autoLocation: Bool {
+        get { AppGroup.defaults.object(forKey: "autoLocation") as? Bool ?? true }
+        set { AppGroup.defaults.set(newValue, forKey: "autoLocation") }
     }
     static var adsRemoved: Bool {
         get { AppGroup.defaults.bool(forKey: "adsRemoved") }

@@ -887,6 +887,21 @@
   }
   appBack();
 
+  /* Uygulamada: şehir seçimi uygulamanın kendi penceresiyle yapılır; sayfadaki büyük arama alanı yerine küçük bir düğme */
+  if (APP) {
+    var pop = $('#citypop');
+    if (pop) pop.querySelector('summary').addEventListener('click', function (e) { e.preventDefault(); appMsg({ type: 'pickCity' }); });
+    $$('.city-pick').forEach(function (el) {
+      var c = getCity();
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'app-city';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg><span></span><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+      b.querySelector('span').textContent = c.name;
+      b.addEventListener('click', function () { appMsg({ type: 'pickCity' }); });
+      el.parentNode.insertBefore(b, el);
+    });
+  }
+
   var pages = { home: home, doviz: doviz, altin: altin, hava: hava, deprem: deprem, namaz: namaz, kripto: kripto, tatil: tatil };
   ticker();
   var p = document.body.getAttribute('data-page');

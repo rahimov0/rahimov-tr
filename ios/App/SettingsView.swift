@@ -5,8 +5,7 @@ import UIKit
 
 struct SettingsView: View {
     @Binding var path: [String]
-    @StateObject private var loc = LocationFetcher()
-    @State private var city = Store.city
+    @ObservedObject private var loc = AutoLocation.shared
     @State private var notifOn = Notif.enabled
     @State private var prayers: [Bool] = Prayer.allCases.map { Notif.isOn($0) }
     @State private var offset = Notif.offset
@@ -21,14 +20,16 @@ struct SettingsView: View {
                     NavigationLink(value: "deprem") { Label(T("Son depremler"), systemImage: "waveform.path.ecg") }
                     NavigationLink(value: "tatil") { Label(T("Resmî tatiller"), systemImage: "calendar") }
                 }
-                Section(T("Konum")) {
-                    LabeledContent(T("Şehir"), value: city.name)
-                    Button { loc.request() } label: { Label(loc.busy ? T("Konum alınıyor…") : T("Konumumu kullan"), systemImage: "location.fill") }
-                        .disabled(loc.busy)
-                    NavigationLink { CitySearch { c in setCity(c) } } label: { Label(T("Şehir ara"), systemImage: "magnifyingglass") }
+                Section {
+                    LabeledContent(T("Şehir"), value: loc.city.name)
+                    Toggle(isOn: Binding(get: { loc.auto }, set: { v in if v { loc.useAuto() } else { Store.autoLocation = false; loc.auto = false } })) {
+                        Label(loc.busy ? T("Konum alınıyor…") : T("Bulunduğum yeri kullan"), systemImage: "location.fill")
+                    }
+                    NavigationLink { CitySearch(onPick: { c in loc.setManual(c) }, onAuto: nil) } label: { Label(T("Şehir ara"), systemImage: "magnifyingglass") }
                     if let e = loc.error { Text(e).font(.footnote).foregroundStyle(.secondary) }
+                } header: { Text(T("Konum")) } footer: {
+                    Text(loc.auto ? T("Uygulamayı her açtığında bulunduğun yere göre güncellenir.") : T("Elle seçtiğin şehir kullanılıyor. Otomatik için “Bulunduğum yeri kullan”ı aç."))
                 }
-                .onChange(of: loc.found) { _, c in if let c { setCity(c) } }
 
                 Section {
                     Toggle(T("Namaz vakti bildirimleri"), isOn: $notifOn)
@@ -90,73 +91,32 @@ struct SettingsView: View {
                 }
                 .navigationBarTitleDisplayMode(.inline)
             }
-            .onReceive(NotificationCenter.default.publisher(for: .cityChanged)) { _ in city = Store.city }
-        }
+                    }
     }
 
-    private func setCity(_ c: City) {
-        city = c
-        Store.city = c
-        WidgetCenter.shared.reloadAllTimelines()
-        NotificationCenter.default.post(name: .cityChanged, object: nil)
-        Task { await Notif.reschedule() }
-    }
 }
 
 // MARK: - Konum
-
-@MainActor final class LocationFetcher: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var found: City?
-    @Published var busy = false
-    @Published var error: String?
-    var onFound: ((City) -> Void)?
-    private let m = CLLocationManager()
-    override init() { super.init(); m.delegate = self; m.desiredAccuracy = kCLLocationAccuracyKilometer }
-
-    func request() {
-        error = nil; busy = true
-        switch m.authorizationStatus {
-        case .notDetermined: m.requestWhenInUseAuthorization()
-        case .denied, .restricted: busy = false; error = T("Konum izni kapalı. Ayarlar > KROV > Konum'dan açabilirsin.")
-        default: m.requestLocation()
-        }
-    }
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        Task { @MainActor in
-            let s = manager.authorizationStatus
-            if busy && (s == .authorizedWhenInUse || s == .authorizedAlways) { manager.requestLocation() }
-            else if busy && (s == .denied || s == .restricted) { busy = false; error = T("Konum izni verilmedi.") }
-        }
-    }
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let l = locations.last else { return }
-        Task { @MainActor in
-            let pm = try? await CLGeocoder().reverseGeocodeLocation(l, preferredLocale: Lang.current.locale).first
-            let name = pm?.locality ?? pm?.administrativeArea ?? T("Konumun")
-            let c = City(name: name, lat: (l.coordinate.latitude * 1000).rounded() / 1000, lon: (l.coordinate.longitude * 1000).rounded() / 1000)
-            found = c
-            onFound?(c)
-            busy = false
-        }
-    }
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in busy = false; self.error = T("Konum alınamadı.") }
-    }
-}
 
 // MARK: - Şehir arama (Open-Meteo)
 
 struct CitySearch: View {
     var onPick: (City) -> Void
+    var onAuto: (() -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @State private var q = ""
     @State private var results: [Hit] = []
     struct Hit: Identifiable { let id = UUID(); let city: City; let sub: String }
 
     var body: some View {
-        List(results) { item in
-            Button { onPick(item.city); dismiss() } label: {
-                VStack(alignment: .leading) { Text(item.city.name).foregroundStyle(.primary); Text(item.sub).font(.caption).foregroundStyle(.secondary) }
+        List {
+            if let onAuto, q.isEmpty {
+                Button { onAuto() } label: { Label(T("Bulunduğum yeri kullan"), systemImage: "location.fill") }
+            }
+            ForEach(results) { item in
+                Button { onPick(item.city); dismiss() } label: {
+                    VStack(alignment: .leading) { Text(item.city.name).foregroundStyle(.primary); Text(item.sub).font(.caption).foregroundStyle(.secondary) }
+                }
             }
         }
         .searchable(text: $q, prompt: T("Şehir ya da ilçe"))

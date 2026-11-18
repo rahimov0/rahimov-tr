@@ -6,6 +6,7 @@ extension Notification.Name {
     static let cityChanged = Notification.Name("rahimov.cityChanged")
     static let switchTab = Notification.Name("rahimov.switchTab")      // object: sekme kimliği
     static let tabReselected = Notification.Name("rahimov.tabReselected") // object: sekme kimliği
+    static let pickCity = Notification.Name("rahimov.pickCity")
 }
 
 /// Sitenin sekmelere karşılık gelen sayfaları
@@ -76,7 +77,6 @@ struct WebTab: UIViewRepresentable {
         let id: String
         let path: String
         weak var web: WKWebView?
-        lazy var loc = LocationFetcher()
         init(id: String, path: String) { self.id = id; self.path = path }
 
         var homeURL: URL { URL(string: "https://rahimov.tr" + Lang.current.sitePrefix + path)! }
@@ -120,20 +120,11 @@ struct WebTab: UIViewRepresentable {
                 case "city":
                     guard let c = m["city"] as? [String: Any], let name = c["name"] as? String,
                           let la = (c["lat"] as? NSNumber)?.doubleValue, let lo = (c["lon"] as? NSNumber)?.doubleValue else { return }
-                    let city = City(name: name, lat: la, lon: lo)
-                    guard city != Store.city else { return }
-                    Store.city = city
-                    WidgetCenter.shared.reloadAllTimelines()
-                    NotificationCenter.default.post(name: .cityChanged, object: self.id)
-                    await Notif.reschedule()
+                    AutoLocation.shared.setManual(City(name: name, lat: la, lon: lo))
                 case "locate":
-                    loc.onFound = { c in
-                        Store.city = c
-                        WidgetCenter.shared.reloadAllTimelines()
-                        NotificationCenter.default.post(name: .cityChanged, object: nil)
-                        Task { await Notif.reschedule() }
-                    }
-                    loc.request()
+                    AutoLocation.shared.useAuto()
+                case "pickCity":
+                    NotificationCenter.default.post(name: .pickCity, object: nil)
                 default: break
                 }
             }
