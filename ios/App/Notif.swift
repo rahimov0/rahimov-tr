@@ -57,12 +57,15 @@ enum Notif {
             for p in Prayer.allCases where isOn(p) {
                 let t = day.times[p.rawValue]
                 let at = t.addingTimeInterval(Double(-offset * 60))
+                // Önceden hatırlatma (zil) vakit bildirimine ektir; vakit girince ayrıca ezanlı bildirim gelir.
+                if offset > 0 {
+                    add("r\(p.rawValue).\(tag)", String(format: T("%d dakika sonra %@"), offset, p.name), "\(city.name) · \(Fmt.time(t))", at)
+                }
                 if isRamadan && p == .aksam {
                     add("iftar.\(tag)", T("İftar vakti"), String(format: T("Hayırlı iftarlar · %@ %@"), city.name, Fmt.time(t)), t, adhan: true)
                     continue
                 }
-                let title = offset > 0 ? String(format: T("%d dakika sonra %@"), offset, p.name) : String(format: T("%@ vakti"), p.name)
-                add("p\(p.rawValue).\(tag)", title, "\(city.name) · \(Fmt.time(t))", at, adhan: offset == 0 && p != .gunes)
+                add("p\(p.rawValue).\(tag)", String(format: T("%@ vakti"), p.name), "\(city.name) · \(Fmt.time(t))", t, adhan: p != .gunes)
             }
             if count >= 60 { break }
         }

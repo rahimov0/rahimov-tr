@@ -45,8 +45,8 @@ struct SettingsView: View {
                         ForEach(Prayer.allCases, id: \.rawValue) { p in
                             Toggle(p.name, isOn: Binding(get: { prayers[p.rawValue] }, set: { prayers[p.rawValue] = $0; Notif.set(p, $0); Task { await Notif.reschedule() } }))
                         }
-                        Picker(T("Ne zaman"), selection: $offset) {
-                            Text(T("Vakit girince")).tag(0)
+                        Picker(T("Önceden hatırlat"), selection: $offset) {
+                            Text(T("Hatırlatma yok")).tag(0)
                             ForEach([5, 10, 15, 30, 45], id: \.self) { m in Text(String(format: T("%d dk önce"), m)).tag(m) }
                         }
                         .onChange(of: offset) { _, v in Notif.offset = v; Task { await Notif.reschedule() } }
@@ -66,7 +66,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: { Text(T("Bildirimler")) } footer: {
-                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır.") + (sound == "ezan" ? " " + T("Ezan vakit girince okunur; önceden hatırlatmalarda yumuşak zil çalar.") : ""))
+                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır.") + (sound == "ezan" ? " " + T("Vakit girince ezan okunur. Önceden hatırlatma seçersen o bildirimde yumuşak zil çalar.") : ""))
                 }
 
                 Section(T("Widget'lar")) {
