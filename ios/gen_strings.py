@@ -1,5 +1,11 @@
 import json,sys
 S = {
+    "Bildirim sesi": ("Notification sound", "Звук уведомления", "Bildiriş səsi"),
+    "Kısa ezan": ("Short adhan", "Короткий азан", "Qısa azan"),
+    "Yumuşak zil": ("Soft chime", "Мягкий звон", "Yumşaq zəng"),
+    "iOS varsayılanı": ("iOS default", "Стандартный iOS", "iOS standartı"),
+    "Ezan vakit girince okunur; önceden hatırlatmalarda yumuşak zil çalar.": ("The adhan plays when the time begins; early reminders use a soft chime.", "Азан звучит в момент наступления времени; для заблаговременных напоминаний — мягкий звон.", "Azan vaxt girəndə oxunur; əvvəlcədən xatırlatmalarda yumşaq zəng çalır."),
+    "Bildirim ezan sesi (CC BY 4.0, kısaltılıp düzenlendi)": ("Adhan notification sound (CC BY 4.0, shortened and edited)", "Звук азана для уведомлений (CC BY 4.0, сокращён и обработан)", "Bildiriş azan səsi (CC BY 4.0, qısaldılıb redaktə edilib)"),
 "Bulunduğum yeri kullan": ("Use my current location","Использовать моё местоположение","Olduğum yeri istifadə et"),
 "Uygulamayı her açtığında bulunduğun yere göre güncellenir.": ("Updates to where you are each time you open the app.","Обновляется по вашему местоположению при каждом открытии приложения.","Tətbiqi hər açanda olduğun yerə görə yenilənir."),
 "Elle seçtiğin şehir kullanılıyor. Otomatik için “Bulunduğum yeri kullan”ı aç.": ("Using the city you chose. Turn on “Use my current location” for automatic.","Используется выбранный вами город. Для автоматического режима включите «Использовать моё местоположение».","Seçdiyin şəhər istifadə olunur. Avtomatik üçün “Olduğum yeri istifadə et”i aç."),

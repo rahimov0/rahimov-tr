@@ -2,6 +2,7 @@ import SwiftUI
 import CoreLocation
 import WidgetKit
 import UIKit
+import AVFoundation
 
 struct SettingsView: View {
     @Binding var path: [String]
@@ -12,6 +13,7 @@ struct SettingsView: View {
     @State private var ramadan = Notif.ramadan
     @State private var sahur = Notif.sahurBefore
     @State private var denied = false
+    @State private var sound = Notif.sound
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -48,6 +50,12 @@ struct SettingsView: View {
                             ForEach([5, 10, 15, 30, 45], id: \.self) { m in Text(String(format: T("%d dk önce"), m)).tag(m) }
                         }
                         .onChange(of: offset) { _, v in Notif.offset = v; Task { await Notif.reschedule() } }
+                        Picker(T("Bildirim sesi"), selection: $sound) {
+                            Text(T("Kısa ezan")).tag("ezan")
+                            Text(T("Yumuşak zil")).tag("zil")
+                            Text(T("iOS varsayılanı")).tag("default")
+                        }
+                        .onChange(of: sound) { _, v in Notif.sound = v; SoundPreview.play(v); Task { await Notif.reschedule() } }
                         Toggle(T("Ramazan'da sahur ve iftar hatırlatması"), isOn: $ramadan)
                             .onChange(of: ramadan) { _, v in Notif.ramadan = v; Task { await Notif.reschedule() } }
                         if ramadan {
@@ -58,7 +66,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: { Text(T("Bildirimler")) } footer: {
-                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır."))
+                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır.") + (sound == "ezan" ? " " + T("Ezan vakit girince okunur; önceden hatırlatmalarda yumuşak zil çalar.") : ""))
                 }
 
                 Section(T("Widget'lar")) {
@@ -150,5 +158,19 @@ enum Sources {
         S(name: "CoinGecko", what: "Kripto para fiyatları", url: "https://www.coingecko.com/"),
         S(name: "Nager.Date", what: "Resmî tatiller", url: "https://date.nager.at/"),
         S(name: "BigDataCloud", what: "Konumdan şehir adı", url: "https://www.bigdatacloud.com/"),
+        S(name: "“patara ezan” · sazman (Freesound)", what: "Bildirim ezan sesi (CC BY 4.0, kısaltılıp düzenlendi)", url: "https://freesound.org/people/sazman/sounds/28775/"),
     ]
+}
+
+/// Ayarlarda ses seçilince kısa bir önizleme çalar (sessiz modda susar).
+@MainActor enum SoundPreview {
+    private static var player: AVAudioPlayer?
+    static func play(_ name: String) {
+        player?.stop(); player = nil
+        guard name != "default", let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.ambient)
+        player = try? AVAudioPlayer(contentsOf: url)
+        player?.play()
+        if name == "ezan" { DispatchQueue.main.asyncAfter(deadline: .now() + 8) { player?.setVolume(0, fadeDuration: 1.5) } }
+    }
 }
