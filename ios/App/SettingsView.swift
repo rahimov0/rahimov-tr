@@ -13,7 +13,8 @@ struct SettingsView: View {
     @State private var ramadan = Notif.ramadan
     @State private var sahur = Notif.sahurBefore
     @State private var denied = false
-    @State private var sound = Notif.sound
+    @State private var remindSound = Notif.remindSound
+    @State private var playing = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -45,17 +46,23 @@ struct SettingsView: View {
                         ForEach(Prayer.allCases, id: \.rawValue) { p in
                             Toggle(p.name, isOn: Binding(get: { prayers[p.rawValue] }, set: { prayers[p.rawValue] = $0; Notif.set(p, $0); Task { await Notif.reschedule() } }))
                         }
+                        Button {
+                            playing = SoundPreview.toggle("ezan")
+                        } label: {
+                            Label(playing ? T("Ezanı durdur") : T("Ezan sesini dinle"), systemImage: playing ? "stop.circle.fill" : "play.circle.fill")
+                        }
                         Picker(T("Önceden hatırlat"), selection: $offset) {
                             Text(T("Hatırlatma yok")).tag(0)
                             ForEach([5, 10, 15, 30, 45], id: \.self) { m in Text(String(format: T("%d dk önce"), m)).tag(m) }
                         }
                         .onChange(of: offset) { _, v in Notif.offset = v; Task { await Notif.reschedule() } }
-                        Picker(T("Bildirim sesi"), selection: $sound) {
-                            Text(T("Kısa ezan")).tag("ezan")
-                            Text(T("Yumuşak zil")).tag("zil")
-                            Text(T("iOS varsayılanı")).tag("default")
+                        if offset > 0 || ramadan {
+                            Picker(T("Hatırlatma sesi"), selection: $remindSound) {
+                                Text(T("Yumuşak zil")).tag("zil")
+                                Text(T("iOS varsayılanı")).tag("default")
+                            }
+                            .onChange(of: remindSound) { _, v in Notif.remindSound = v; SoundPreview.stop(); playing = false; if v == "zil" { _ = SoundPreview.toggle("zil") }; Task { await Notif.reschedule() } }
                         }
-                        .onChange(of: sound) { _, v in Notif.sound = v; SoundPreview.play(v); Task { await Notif.reschedule() } }
                         Toggle(T("Ramazan'da sahur ve iftar hatırlatması"), isOn: $ramadan)
                             .onChange(of: ramadan) { _, v in Notif.ramadan = v; Task { await Notif.reschedule() } }
                         if ramadan {
@@ -66,7 +73,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: { Text(T("Bildirimler")) } footer: {
-                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır.") + (sound == "ezan" ? " " + T("Vakit girince ezan okunur. Önceden hatırlatma seçersen o bildirimde yumuşak zil çalar.") : ""))
+                    Text(denied ? T("Bildirim izni kapalı. Ayarlar > KROV > Bildirimler'den açabilirsin.") : T("Vakitler Diyanet yöntemiyle, seçtiğin şehre göre hesaplanır.") + " " + T("Vakit girince kısa ezan okunur (Güneş hariç). Hatırlatma sesi yalnız önceden hatırlatmalarda ve sahurda çalar.") + " " + T("Ezan sesi telefonun zil sesi seviyesine bağlıdır: Ayarlar > Ses ve Dokunuş."))
                 }
 
                 Section(T("Widget'lar")) {
@@ -162,15 +169,18 @@ enum Sources {
     ]
 }
 
-/// Ayarlarda ses seçilince kısa bir önizleme çalar (sessiz modda susar).
+/// Ayarlarda ses önizlemesi: sessiz modda da duyulsun diye playback kategorisi.
 @MainActor enum SoundPreview {
     private static var player: AVAudioPlayer?
-    static func play(_ name: String) {
-        player?.stop(); player = nil
-        guard name != "default", let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return }
-        try? AVAudioSession.sharedInstance().setCategory(.ambient)
+    static func stop() { player?.stop(); player = nil }
+    /// Çalıyorsa durdurur, değilse başlatır. Çalmaya başladıysa true döner.
+    static func toggle(_ name: String) -> Bool {
+        if let p = player, p.isPlaying { stop(); return false }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "caf") else { return false }
+        try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.duckOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
         player = try? AVAudioPlayer(contentsOf: url)
         player?.play()
-        if name == "ezan" { DispatchQueue.main.asyncAfter(deadline: .now() + 8) { player?.setVolume(0, fadeDuration: 1.5) } }
+        return player?.isPlaying ?? false
     }
 }

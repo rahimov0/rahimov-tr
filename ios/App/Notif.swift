@@ -12,17 +12,10 @@ enum Notif {
     static var offset: Int { get { d.integer(forKey: "notif.offset") } set { d.set(newValue, forKey: "notif.offset") } }
     static var ramadan: Bool { get { d.object(forKey: "notif.ramadan") as? Bool ?? true } set { d.set(newValue, forKey: "notif.ramadan") } }
     static var sahurBefore: Int { get { d.object(forKey: "notif.sahur") as? Int ?? 45 } set { d.set(newValue, forKey: "notif.sahur") } }
-    /// Bildirim sesi: "ezan" (kısa ezan, vakit girince), "zil" (yumuşak zil), "default" (iOS varsayılanı).
-    static var sound: String { get { d.string(forKey: "notif.sound") ?? "ezan" } set { d.set(newValue, forKey: "notif.sound") } }
-
-    /// Vakit girince ezan; önceden hatırlatma, güneş ve sahur için zil. iOS varsayılanı seçiliyse hep varsayılan.
-    static func soundFor(adhan: Bool) -> UNNotificationSound {
-        switch sound {
-        case "default": return .default
-        case "zil": return UNNotificationSound(named: UNNotificationSoundName("zil.caf"))
-        default: return UNNotificationSound(named: UNNotificationSoundName(adhan ? "ezan.caf" : "zil.caf"))
-        }
-    }
+    /// Hatırlatma sesi (yalnız önceden hatırlatma ve sahur için): "zil" ya da "default". Vakit bildirimi her zaman ezanla gelir.
+    static var remindSound: String { get { d.string(forKey: "notif.remindSound") ?? "zil" } set { d.set(newValue, forKey: "notif.remindSound") } }
+    static let adhanSound = UNNotificationSound(named: UNNotificationSoundName("ezan.caf"))
+    static var reminderSound: UNNotificationSound { remindSound == "default" ? .default : UNNotificationSound(named: UNNotificationSoundName("zil.caf")) }
 
     static func requestPermission() async -> Bool {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
@@ -41,7 +34,8 @@ enum Notif {
         func add(_ id: String, _ title: String, _ body: String, _ at: Date, adhan: Bool = false) {
             guard at > now, count < 60 else { return }
             let c = UNMutableNotificationContent()
-            c.title = title; c.body = body; c.sound = soundFor(adhan: adhan)
+            c.title = title; c.body = body; c.sound = adhan ? adhanSound : reminderSound
+            c.interruptionLevel = adhan ? .timeSensitive : .active
             c.threadIdentifier = "namaz"
             let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: at)
             center.add(UNNotificationRequest(identifier: id, content: c, trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))

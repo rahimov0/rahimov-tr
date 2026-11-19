@@ -25,6 +25,7 @@ targets:
       path: App/Rahimov.entitlements
       properties:
         com.apple.security.application-groups: [group.tr.rahimov.app]
+        com.apple.developer.usernotifications.time-sensitive: true
     info:
       path: App/Info.plist
       properties:

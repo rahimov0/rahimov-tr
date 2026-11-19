@@ -1,5 +1,10 @@
 import json,sys
 S = {
+    "Ezan sesini dinle": ("Listen to the adhan", "Прослушать азан", "Azana qulaq as"),
+    "Ezanı durdur": ("Stop the adhan", "Остановить азан", "Azanı dayandır"),
+    "Hatırlatma sesi": ("Reminder sound", "Звук напоминания", "Xatırlatma səsi"),
+    "Vakit girince kısa ezan okunur (Güneş hariç). Hatırlatma sesi yalnız önceden hatırlatmalarda ve sahurda çalar.": ("A short adhan plays when each prayer time begins (except sunrise). The reminder sound is used only for early reminders and suhoor.", "В начале каждого времени намаза звучит короткий азан (кроме восхода). Звук напоминания используется только для заблаговременных напоминаний и сухура.", "Hər namaz vaxtı girəndə qısa azan oxunur (Günəş istisna). Xatırlatma səsi yalnız əvvəlcədən xatırlatmalarda və sahurda çalır."),
+    "Ezan sesi telefonun zil sesi seviyesine bağlıdır: Ayarlar > Ses ve Dokunuş.": ("The adhan volume follows your phone's ringer volume: Settings > Sounds & Haptics.", "Громкость азана зависит от громкости звонка: Настройки > Звуки, тактильные сигналы.", "Azanın səs səviyyəsi telefonun zəng səsinə bağlıdır: Ayarlar > Səslər və Toxunuş."),
     "Bildirim sesi": ("Notification sound", "Звук уведомления", "Bildiriş səsi"),
     "Kısa ezan": ("Short adhan", "Короткий азан", "Qısa azan"),
     "Yumuşak zil": ("Soft chime", "Мягкий звон", "Yumşaq zəng"),
