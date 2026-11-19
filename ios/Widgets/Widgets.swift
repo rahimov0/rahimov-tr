@@ -692,7 +692,6 @@ struct PanelWidget: Widget {
         .supportedFamilies([.systemMedium, .systemLarge, .accessoryRectangular, .accessoryInline])
     }
 }
-}
 
 // MARK: - Kıble
 
