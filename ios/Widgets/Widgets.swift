@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Renkler (sitedeki bento paleti)
 
@@ -534,28 +535,41 @@ struct HavaWidget: Widget {
 
 // MARK: - Panel (hepsi bir arada)
 
-struct PanelEntry: TimelineEntry { let date: Date; let m: Market; let w: Weather; let p: PrayerState }
+enum PanelThird: String, AppEnum {
+    case doviz, kible
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Üçüncü kutu"
+    static var caseDisplayRepresentations: [PanelThird: DisplayRepresentation] = [.doviz: "Döviz ve altın", .kible: "Kıble"]
+}
 
-struct PanelProvider: TimelineProvider {
+struct PanelConfig: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Günlük panel"
+    static var description = IntentDescription("Üçüncü kutuda ne görünsün?")
+    @Parameter(title: "Üçüncü kutu", default: .doviz) var third: PanelThird
+    init() {}
+}
+
+struct PanelEntry: TimelineEntry { let date: Date; let m: Market; let w: Weather; let p: PrayerState; var city: City = Store.city; var third: PanelThird = .doviz }
+
+struct PanelProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> PanelEntry {
         PanelEntry(date: Date(), m: API.cachedMarket ?? .placeholder, w: API.cachedWeather ?? .placeholder, p: NamazProvider().sample())
     }
-    func getSnapshot(in context: Context, completion: @escaping (PanelEntry) -> Void) { completion(placeholder(in: context)) }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<PanelEntry>) -> Void) {
-        Task {
-            let c = await WidgetCity.resolve()
-            async let m = try? API.market()
-            async let w = try? API.weather(c)
-            async let d = try? API.prayerDays(c, days: 2)
-            let market = await m ?? API.cachedMarket ?? .placeholder
-            let weather = await w ?? API.cachedWeather ?? .placeholder
-            let days = await d ?? []
-            let now = Date()
-            var points = [now]
-            for dd in days { points += dd.times.filter { $0 > now && $0 < now.addingTimeInterval(30 * 60) } }
-            let entries = points.sorted().map { PanelEntry(date: $0, m: market, w: weather, p: PrayerState.compute(days: days, at: $0.addingTimeInterval(1), city: c.name)) }
-            completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60))))
-        }
+    func snapshot(for configuration: PanelConfig, in context: Context) async -> PanelEntry {
+        var e = placeholder(in: context); e.third = configuration.third; return e
+    }
+    func timeline(for configuration: PanelConfig, in context: Context) async -> Timeline<PanelEntry> {
+        let c = await WidgetCity.resolve()
+        async let m = try? API.market()
+        async let w = try? API.weather(c)
+        async let d = try? API.prayerDays(c, days: 2)
+        let market = await m ?? API.cachedMarket ?? .placeholder
+        let weather = await w ?? API.cachedWeather ?? .placeholder
+        let days = await d ?? []
+        let now = Date()
+        var points = [now]
+        for dd in days { points += dd.times.filter { $0 > now && $0 < now.addingTimeInterval(30 * 60) } }
+        let entries = points.sorted().map { PanelEntry(date: $0, m: market, w: weather, p: PrayerState.compute(days: days, at: $0.addingTimeInterval(1), city: c.name), city: c, third: configuration.third) }
+        return Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60)))
     }
 }
 
@@ -640,9 +654,15 @@ struct PanelView: View {
                 .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(wxGradient(e.w.code, day: e.w.isDay), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 if family == .systemMedium {
-                    FxCard(m: e.m, compact: true)
-                        .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        .background(FxBackground().clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
+                    if e.third == .kible {
+                        QiblaTile(city: e.city)
+                            .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .background(QiblaBackground().clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
+                    } else {
+                        FxCard(m: e.m, compact: true)
+                            .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .background(FxBackground().clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
+                    }
                 }
             }
             if family == .systemLarge {
@@ -663,14 +683,15 @@ struct PanelView: View {
 
 struct PanelWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "panel", provider: PanelProvider()) { e in
+        AppIntentConfiguration(kind: "panel", intent: PanelConfig.self, provider: PanelProvider()) { e in
             PanelView(e: e).widgetURL(URL(string: "rahimov://panel"))
         }
         .contentMarginsDisabled()
         .configurationDisplayName(T("Günlük panel"))
-        .description(T("Namaz, hava ve döviz bir arada."))
+        .description(T("Namaz, hava ve döviz ya da kıble bir arada. Üçüncü kutuyu widget'ı düzenleyerek seçebilirsin."))
         .supportedFamilies([.systemMedium, .systemLarge, .accessoryRectangular, .accessoryInline])
     }
+}
 }
 
 // MARK: - Kıble
@@ -688,6 +709,103 @@ struct QiblaProvider: TimelineProvider {
     }
 }
 
+/// Kâbe simgesi: siyah küp, altın kuşak. mono: kilit ekranı (tek renk) için
+struct KaabaGlyph: View {
+    var mono = false
+    var body: some View {
+        GeometryReader { g in
+            let w = g.size.width
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: w * 0.12, style: .continuous)
+                    .fill(mono ? AnyShapeStyle(.primary) : AnyShapeStyle(Color(white: 0.07)))
+                    .overlay(RoundedRectangle(cornerRadius: w * 0.12, style: .continuous).stroke(mono ? .clear : .white.opacity(0.5), lineWidth: max(0.6, w * 0.04)))
+                Rectangle().fill(mono ? AnyShapeStyle(Color.black.opacity(0.55)) : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFFE7A0), Color(hex: 0xD9A23A)], startPoint: .top, endPoint: .bottom)))
+                    .frame(height: w * 0.16).offset(y: w * 0.22)
+                    .blendMode(mono ? .destinationOut : .normal)
+                Rectangle().fill(mono ? AnyShapeStyle(Color.black.opacity(0.55)) : AnyShapeStyle(Color(hex: 0xD9A23A)))
+                    .frame(width: w * 0.2, height: w * 0.34).offset(x: w * 0.12, y: w * 0.58)
+                    .blendMode(mono ? .destinationOut : .normal)
+            }
+            .compositingGroup()
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+/// Kıble kadranı: kuzey işareti, yön çizgileri, ucunda Kâbe olan ok (sabit kuzeye göre)
+struct QiblaDial: View {
+    let q: Double
+    var mono = false
+    var body: some View {
+        GeometryReader { g in
+            let d = min(g.size.width, g.size.height), r = d / 2
+            let gold = Color(hex: 0xF5C451)
+            ZStack {
+                Circle().fill(mono ? AnyShapeStyle(.primary.opacity(0.12)) : AnyShapeStyle(RadialGradient(colors: [.white.opacity(0.14), .white.opacity(0.03)], center: .center, startRadius: 0, endRadius: r)))
+                Circle().stroke(mono ? AnyShapeStyle(.primary.opacity(0.5)) : AnyShapeStyle(.white.opacity(0.35)), lineWidth: max(1, d * 0.02))
+                ForEach(0..<8, id: \.self) { i in
+                    Capsule().fill(mono ? AnyShapeStyle(.primary.opacity(i % 2 == 0 ? 0.8 : 0.4)) : AnyShapeStyle(.white.opacity(i % 2 == 0 ? 0.7 : 0.35)))
+                        .frame(width: max(1, d * 0.02), height: d * (i % 2 == 0 ? 0.09 : 0.06))
+                        .offset(y: -r * 0.86).rotationEffect(.degrees(Double(i) * 45))
+                }
+                Text("N").font(.system(size: max(7, d * 0.13), weight: .heavy, design: .rounded))
+                    .foregroundStyle(mono ? AnyShapeStyle(.primary) : AnyShapeStyle(Color(hex: 0xFF6E61)))
+                    .offset(y: -r * 0.62)
+                // Ok: merkezden Kâbe'ye
+                Capsule().fill(mono ? AnyShapeStyle(.primary) : AnyShapeStyle(LinearGradient(colors: [gold, gold.opacity(0.25)], startPoint: .top, endPoint: .bottom)))
+                    .frame(width: max(1.5, d * 0.045), height: r * 0.62)
+                    .offset(y: -r * 0.31).rotationEffect(.degrees(q))
+                KaabaGlyph(mono: mono).frame(width: d * 0.26, height: d * 0.26)
+                    .rotationEffect(.degrees(-q))
+                    .offset(y: -r * 0.66).rotationEffect(.degrees(q))
+                Circle().fill(mono ? AnyShapeStyle(.primary) : AnyShapeStyle(gold)).frame(width: d * 0.09, height: d * 0.09)
+            }
+            .frame(width: d, height: d)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+/// Zümrüt gece gökyüzü + silik sekiz köşeli yıldız (Rub el Hizb) deseni
+struct QiblaBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(hex: 0x062A26), Color(hex: 0x0C4A3F), Color(hex: 0x14634F)], startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color(hex: 0xF5C451).opacity(0.22), .clear], center: .topTrailing, startRadius: 0, endRadius: 150)
+            ZStack {
+                RoundedRectangle(cornerRadius: 6).stroke(.white.opacity(0.07), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 6).stroke(.white.opacity(0.07), lineWidth: 1.5).rotationEffect(.degrees(45))
+                Circle().stroke(.white.opacity(0.05), lineWidth: 1)
+            }
+            .frame(width: 110, height: 110)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).offset(x: 34, y: 34)
+            Canvas { ctx, size in
+                for (x, y, r) in [(0.12, 0.1, 1.0), (0.3, 0.06, 0.7), (0.52, 0.14, 0.9), (0.08, 0.32, 0.6), (0.9, 0.42, 0.7), (0.22, 0.88, 0.6)] {
+                    ctx.fill(Path(ellipseIn: CGRect(x: x * size.width, y: y * size.height, width: r * 2, height: r * 2)), with: .color(.white.opacity(0.55)))
+                }
+            }
+        }
+    }
+}
+
+/// Paneldeki küçük kıble kutusu
+struct QiblaTile: View {
+    let city: City
+    var body: some View {
+        let q = Qibla.bearing(lat: city.lat, lon: city.lon)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                KaabaGlyph().frame(width: 12, height: 12)
+                Text(T("Kıble")).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+            }
+            QiblaDial(q: q).frame(height: 62).padding(.vertical, 2)
+            Spacer(minLength: 0)
+            Text("\(Int(q.rounded()))°").font(.system(size: 18, weight: .bold, design: .rounded)).foregroundStyle(.white)
+            Text(Qibla.direction(q)).font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(hex: 0xF5C451)).lineLimit(1).minimumScaleFactor(0.7)
+        }
+    }
+}
+
 /// Widget canlı pusula olamaz (iOS widget'ları sensör okuyamaz): kıble açısını gösterir, dokununca pusula açılır.
 struct QiblaWidgetView: View {
     @Environment(\.widgetFamily) var family
@@ -696,47 +814,46 @@ struct QiblaWidgetView: View {
         let q = Qibla.bearing(lat: e.city.lat, lon: e.city.lon)
         switch family {
         case .accessoryCircular:
-            ZStack {
-                AccessoryWidgetBackground()
-                Image(systemName: "location.north.fill").font(.system(size: 18, weight: .bold)).rotationEffect(.degrees(q)).offset(y: -4)
-                Text("\(Int(q.rounded()))°").font(.system(size: 11, weight: .bold)).offset(y: 13)
-            }
-            .containerBackground(for: .widget) { Color.clear }
+            QiblaDial(q: q, mono: true).padding(1)
+                .widgetAccentable()
+                .containerBackground(for: .widget) { AccessoryWidgetBackground() }
         case .accessoryRectangular:
-            VStack(alignment: .leading, spacing: 1) {
-                Label(T("Kıble"), systemImage: "location.north.circle.fill").font(.system(size: 14, weight: .bold))
-                Text("\(Int(q.rounded()))° · \(Qibla.direction(q))").font(.system(size: 13, weight: .semibold))
-                Text(T("Dokun, pusulayı aç")).font(.system(size: 11)).foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                QiblaDial(q: q, mono: true).frame(width: 52, height: 52).widgetAccentable()
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(T("Kıble")).font(.system(size: 14, weight: .bold))
+                    Text("\(Int(q.rounded()))° · \(Qibla.direction(q))").font(.system(size: 12, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(T("Dokun, pusulayı aç")).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             .containerBackground(for: .widget) { Color.clear }
         default:
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(T("Kıble")).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.85))
-                    Spacer()
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 5) {
+                    KaabaGlyph().frame(width: 14, height: 14)
+                    Text(T("Kıble")).font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                    Spacer(minLength: 2)
                     Text(e.city.name).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
                 }
-                Spacer(minLength: 0)
-                HStack(alignment: .center, spacing: 10) {
-                    ZStack {
-                        Circle().stroke(.white.opacity(0.25), lineWidth: 1.5)
-                        Text("K").font(.system(size: 9, weight: .heavy)).foregroundStyle(Color(red: 1, green: 0.45, blue: 0.4)).offset(y: -26)
-                        Capsule().fill(LinearGradient(colors: [Color(red: 0.98, green: 0.8, blue: 0.35), .clear], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 4, height: 26).offset(y: -12).rotationEffect(.degrees(q))
-                        Circle().fill(.white).frame(width: 6, height: 6)
-                    }
-                    .frame(width: 64, height: 64)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("\(Int(q.rounded()))°").font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(.white)
-                        Text(Qibla.direction(q)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.8)).lineLimit(1).minimumScaleFactor(0.7)
+                Spacer(minLength: 4)
+                HStack(alignment: .center, spacing: 8) {
+                    QiblaDial(q: q).frame(width: 78, height: 78)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(Int(q.rounded()))°").font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(Qibla.direction(q)).font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0xF5C451)).lineLimit(2).minimumScaleFactor(0.7)
+                        Text(Fmt.num(Qibla.distanceKm(lat: e.city.lat, lon: e.city.lon), 0) + " km").font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.65)).lineLimit(1)
                     }
                 }
-                Spacer(minLength: 0)
-                Text(T("Dokun, pusulayı aç")).font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(red: 0.98, green: 0.8, blue: 0.35))
+                Spacer(minLength: 4)
+                HStack(spacing: 3) {
+                    Text(T("Pusulayı aç")).font(.system(size: 11, weight: .bold))
+                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .heavy))
+                }
+                .foregroundStyle(Color(hex: 0x062A26))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Color(hex: 0xF5C451), in: Capsule())
             }
-            .containerBackground(for: .widget) {
-                LinearGradient(colors: [Color(hex: 0x0B1230), Color(hex: 0x23305E)], startPoint: .top, endPoint: .bottom)
-            }
+            .containerBackground(for: .widget) { QiblaBackground() }
         }
     }
 }
