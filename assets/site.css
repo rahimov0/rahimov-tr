@@ -734,7 +734,7 @@ footer { border-top: 1px solid var(--line); padding: 48px 0 56px; margin-top: 8p
 
 /* Uygulama: şehir düğmesi */
 .app-city{display:none}
-.in-app .app-qibla{margin-left:8px;background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .in-app .app-city{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;margin:0 0 16px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--text);font:700 15px/1 inherit;cursor:pointer}
+.in-app .app-qibla{margin-left:8px;background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 /* Mobil: şehir penceresi ekrandan taşmasın */
 @media (max-width: 680px) { .today { position: relative; } .citypop { position: static; } .citypop-body { left: 0; right: 0; width: auto; } }
