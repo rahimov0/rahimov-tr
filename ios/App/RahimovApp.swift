@@ -14,6 +14,7 @@ struct RahimovApp: App {
                     switch url.host {
                     case "doviz": NotificationCenter.default.post(name: .switchTab, object: "piyasa:doviz")
                     case "panel", "hava", "namaz": tab = url.host!
+                    case "kible": tab = "namaz"; NotificationCenter.default.post(name: .openQibla, object: nil)
                     default: break
                     }
                 }
@@ -24,6 +25,10 @@ struct RahimovApp: App {
                 }
         }
         .onChange(of: phase) { _, p in
+            if p == .active, Qibla.pendingOpen {
+                Qibla.pendingOpen = false; tab = "namaz"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { NotificationCenter.default.post(name: .openQibla, object: nil) }
+            }
             if p == .active { AutoLocation.shared.refresh(); Task { await Notif.reschedule(); WidgetCenter.shared.reloadAllTimelines() } }
             if p == .background { scheduleRefresh() }
         }
@@ -46,6 +51,7 @@ struct RootView: View {
     @State private var market = "doviz"
     @State private var morePath: [String] = []
     @State private var showCity = false
+    @State private var showQibla = false
 
     var body: some View {
         // Seçili sekmeye tekrar dokununca sekme kendi ana sayfasına döner
@@ -71,6 +77,8 @@ struct RootView: View {
         .tint(Color(red: 0.76, green: 0.25, blue: 0.05))
         .sheet(isPresented: $showCity) { CityPickerSheet() }
         .onReceive(NotificationCenter.default.publisher(for: .pickCity)) { _ in showCity = true }
+        .fullScreenCover(isPresented: $showQibla) { QiblaView() }
+        .onReceive(NotificationCenter.default.publisher(for: .openQibla)) { _ in showCity = false; showQibla = true }
         .onReceive(NotificationCenter.default.publisher(for: .switchTab)) { n in
             guard let t = n.object as? String else { return }
             let parts = t.split(separator: ":").map(String.init)

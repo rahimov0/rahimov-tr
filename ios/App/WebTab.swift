@@ -7,6 +7,7 @@ extension Notification.Name {
     static let switchTab = Notification.Name("rahimov.switchTab")      // object: sekme kimliği
     static let tabReselected = Notification.Name("rahimov.tabReselected") // object: sekme kimliği
     static let pickCity = Notification.Name("rahimov.pickCity")
+    static let openQibla = Notification.Name("rahimov.openQibla")
 }
 
 /// Sitenin sekmelere karşılık gelen sayfaları
@@ -125,6 +126,8 @@ struct WebTab: UIViewRepresentable {
                     AutoLocation.shared.useAuto()
                 case "pickCity":
                     NotificationCenter.default.post(name: .pickCity, object: nil)
+                case "qibla":
+                    NotificationCenter.default.post(name: .openQibla, object: nil)
                 default: break
                 }
             }

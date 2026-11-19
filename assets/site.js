@@ -850,15 +850,21 @@
       getJSON(API.pray(c, pad(now.getDate()) + '-' + pad(now.getMonth() + 1) + '-' + now.getFullYear()), 3600).then(function (j) {
         var t = j.data.timings, h = j.data.date.hijri;
         setText("#pray-hijri", L("Hicri") + " " + +h.day + " " + (HIJRI[h.month.number - 1] || h.month.en) + " " + h.year);
+        /* Yatsıdan sonra geri sayım yarının imsakına devam etsin */
+        var tmr = null, nd = new Date(now.getTime() + 864e5);
+        getJSON(API.pray(c, pad(nd.getDate()) + '-' + pad(nd.getMonth() + 1) + '-' + nd.getFullYear()), 3600).then(function (j2) { tmr = j2.data.timings.Imsak.slice(0, 5); }).catch(function () {});
         function draw() {
           var n = new Date(), cur = n.getHours() * 60 + n.getMinutes(), next = -1;
           PR.forEach(function (p, i) { var a = t[p[0]].slice(0, 5).split(':'); if (next < 0 && +a[0] * 60 + +a[1] > cur) next = i; });
+          var late = next < 0 && tmr;   /* yatsı geçti: sıradaki yarının imsakı */
           grid.innerHTML = PR.map(function (p, i) {
-            var k = PKEY[i], past = next < 0 || i < next;
-            return '<div class="pray" data-p="' + k + '"' + (i === next ? ' data-next' : past ? ' data-past' : '') + '>' + PRAY_ART[k] + '<small>' + L(p[1]) + '</small><b>' + t[p[0]].slice(0, 5) + '</b>' + (i === next ? '<em>' + L('Sıradaki') + '</em>' : '') + '</div>';
+            var k = PKEY[i], isN = i === next || (late && i === 0), past = !isN && (next < 0 || i < next);
+            return '<div class="pray" data-p="' + k + '"' + (isN ? ' data-next' : past ? ' data-past' : '') + '>' + PRAY_ART[k] + '<small>' + L(p[1]) + '</small><b>' + (late && i === 0 ? tmr : t[p[0]].slice(0, 5)) + '</b>' + (isN ? '<em>' + (late ? L('Yarın') : L('Sıradaki')) + '</em>' : '') + '</div>';
           }).join('');
-          if (next < 0) { setText('#pray-next', L('Bugünün vakitleri tamamlandı. Yarının imsak vakti için aşağıdaki aylık tabloya bak.')); return; }
-          var a = t[PR[next][0]].slice(0, 5).split(':'), left = (+a[0] * 60 + +a[1]) * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds());
+          if (next < 0 && !tmr) { setText('#pray-next', L('Bugünün vakitleri tamamlandı. Yarının imsak vakti için aşağıdaki aylık tabloya bak.')); return; }
+          var nowS = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds();
+          var a = (late ? tmr : t[PR[next][0]].slice(0, 5)).split(':'), left = (+a[0] * 60 + +a[1]) * 60 - nowS + (late ? 86400 : 0);
+          if (late) next = 0;
           setText('#pray-next', F('{p} vaktine {h} saat {m} dakika {s} saniye kaldı.', { p: L(PR[next][1]), h: Math.floor(left / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 }));
         }
         draw(); tick = setInterval(draw, 1000);
@@ -959,6 +965,15 @@
       b.querySelector('span').textContent = c.name;
       b.addEventListener('click', function () { appMsg({ type: 'pickCity' }); });
       el.parentNode.insertBefore(b, el);
+      /* Namaz sayfasında şehrin yanına Kıble düğmesi: uygulamanın pusula ekranını açar */
+      if ($('#pray-grid')) {
+        var q = document.createElement('button');
+        q.type = 'button'; q.className = 'app-city app-qibla';
+        q.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 5l3 8h-6z" fill="currentColor"/><path d="M12 19l-3-6h6z" fill="currentColor" opacity=".35"/></svg><span></span>';
+        q.querySelector('span').textContent = L('Kıble');
+        q.addEventListener('click', function () { appMsg({ type: 'qibla' }); });
+        el.parentNode.insertBefore(q, el);
+      }
     });
   }
 

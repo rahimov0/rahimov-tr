@@ -563,8 +563,51 @@ struct PanelView: View {
     @Environment(\.widgetFamily) var family
     let e: PanelEntry
     var body: some View {
+        if family == .accessoryRectangular { lockRect } else if family == .accessoryInline { lockInline } else { home }
+    }
+
+    /// Kilit ekranı: üç bilgi tek kutuda (namaz geri sayımı, hava, dolar + gram altın)
+    private var lockRect: some View {
         let r = e.m.rates
-        VStack(spacing: 6) {
+        return VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                Image(systemName: e.p.ramadan ? "moon.stars.fill" : (Prayer(rawValue: e.p.nextIndex)?.symbol ?? "moon.fill"))
+                Text(Prayer(rawValue: e.p.nextIndex)?.name ?? e.p.targetName).lineLimit(1)
+                Spacer(minLength: 2)
+                if let t = e.p.target { Text(t, style: .timer).monospacedDigit().multilineTextAlignment(.trailing).frame(maxWidth: 64, alignment: .trailing) }
+            }
+            .font(.system(size: 14, weight: .bold))
+            HStack(spacing: 4) {
+                Image(systemName: WX.symbol(e.w.code, day: e.w.isDay))
+                Text("\(Int(e.w.temp.rounded()))°").fontWeight(.bold)
+                Text("↑\(Int(e.w.max.rounded()))° ↓\(Int(e.w.min.rounded()))°").foregroundStyle(.secondary)
+            }
+            .font(.system(size: 12)).lineLimit(1)
+            HStack(spacing: 4) {
+                Text("$").fontWeight(.heavy)
+                Text(Fmt.num(r["USD"]?.sell ?? 0, 2)).fontWeight(.bold)
+                if let u = r["USD"] { Text(u.change > 0 ? "▲" : u.change < 0 ? "▼" : "") }
+                Text("·").foregroundStyle(.secondary)
+                Text("g").fontWeight(.heavy)
+                Text(Fmt.num(r["GRA"]?.sell ?? 0, 0)).fontWeight(.bold)
+                if let g = r["GRA"] { Text(g.change > 0 ? "▲" : g.change < 0 ? "▼" : "") }
+            }
+            .font(.system(size: 12)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .containerBackground(for: .widget) { Color.clear }
+    }
+
+    private var lockInline: some View {
+        HStack {
+            Image(systemName: WX.symbol(e.w.code, day: e.w.isDay))
+            Text("\(Int(e.w.temp.rounded()))° · $ \(Fmt.num(e.m.rates["USD"]?.sell ?? 0, 2))")
+        }
+        .containerBackground(for: .widget) { Color.clear }
+    }
+
+    private var home: some View {
+        let r = e.m.rates
+        return VStack(spacing: 6) {
             HStack(spacing: 6) {
                 // Namaz
                 VStack(alignment: .leading, spacing: 2) {
@@ -626,7 +669,100 @@ struct PanelWidget: Widget {
         .contentMarginsDisabled()
         .configurationDisplayName(T("Günlük panel"))
         .description(T("Namaz, hava ve döviz bir arada."))
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .supportedFamilies([.systemMedium, .systemLarge, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Kıble
+
+struct QiblaEntry: TimelineEntry { let date: Date; let city: City }
+
+struct QiblaProvider: TimelineProvider {
+    func placeholder(in context: Context) -> QiblaEntry { QiblaEntry(date: Date(), city: Store.city) }
+    func getSnapshot(in context: Context, completion: @escaping (QiblaEntry) -> Void) { completion(placeholder(in: context)) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<QiblaEntry>) -> Void) {
+        Task {
+            let c = await WidgetCity.resolve()
+            completion(Timeline(entries: [QiblaEntry(date: Date(), city: c)], policy: .after(Date().addingTimeInterval(3 * 3600))))
+        }
+    }
+}
+
+/// Widget canlı pusula olamaz (iOS widget'ları sensör okuyamaz): kıble açısını gösterir, dokununca pusula açılır.
+struct QiblaWidgetView: View {
+    @Environment(\.widgetFamily) var family
+    let e: QiblaEntry
+    var body: some View {
+        let q = Qibla.bearing(lat: e.city.lat, lon: e.city.lon)
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "location.north.fill").font(.system(size: 18, weight: .bold)).rotationEffect(.degrees(q)).offset(y: -4)
+                Text("\(Int(q.rounded()))°").font(.system(size: 11, weight: .bold)).offset(y: 13)
+            }
+            .containerBackground(for: .widget) { Color.clear }
+        case .accessoryRectangular:
+            VStack(alignment: .leading, spacing: 1) {
+                Label(T("Kıble"), systemImage: "location.north.circle.fill").font(.system(size: 14, weight: .bold))
+                Text("\(Int(q.rounded()))° · \(Qibla.direction(q))").font(.system(size: 13, weight: .semibold))
+                Text(T("Dokun, pusulayı aç")).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .containerBackground(for: .widget) { Color.clear }
+        default:
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(T("Kıble")).font(.system(size: 13, weight: .bold)).foregroundStyle(.white.opacity(0.85))
+                    Spacer()
+                    Text(e.city.name).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                HStack(alignment: .center, spacing: 10) {
+                    ZStack {
+                        Circle().stroke(.white.opacity(0.25), lineWidth: 1.5)
+                        Text("K").font(.system(size: 9, weight: .heavy)).foregroundStyle(Color(red: 1, green: 0.45, blue: 0.4)).offset(y: -26)
+                        Capsule().fill(LinearGradient(colors: [Color(red: 0.98, green: 0.8, blue: 0.35), .clear], startPoint: .top, endPoint: .bottom))
+                            .frame(width: 4, height: 26).offset(y: -12).rotationEffect(.degrees(q))
+                        Circle().fill(.white).frame(width: 6, height: 6)
+                    }
+                    .frame(width: 64, height: 64)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("\(Int(q.rounded()))°").font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                        Text(Qibla.direction(q)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.8)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                }
+                Spacer(minLength: 0)
+                Text(T("Dokun, pusulayı aç")).font(.system(size: 10, weight: .semibold)).foregroundStyle(Color(red: 0.98, green: 0.8, blue: 0.35))
+            }
+            .containerBackground(for: .widget) {
+                LinearGradient(colors: [Color(hex: 0x0B1230), Color(hex: 0x23305E)], startPoint: .top, endPoint: .bottom)
+            }
+        }
+    }
+}
+
+struct QiblaWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "kible", provider: QiblaProvider()) { e in
+            QiblaWidgetView(e: e).widgetURL(URL(string: "rahimov://kible"))
+        }
+        .configurationDisplayName(T("Kıble"))
+        .description(T("Bulunduğun yere göre kıble açısı; dokununca pusula açılır."))
+        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
+    }
+}
+
+/// Denetim Merkezi ve kilit ekranı düğmesi (iOS 18+): tek dokunuşla pusula
+@available(iOSApplicationExtension 18.0, *)
+struct QiblaControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "tr.rahimov.app.kible") {
+            ControlWidgetButton(action: OpenQiblaIntent()) {
+                Label(T("Kıble"), systemImage: "location.north.circle.fill")
+            }
+        }
+        .displayName("Kıble")
+        .description("KROV kıble pusulasını açar.")
     }
 }
 
@@ -637,6 +773,8 @@ struct RahimovWidgets: WidgetBundle {
         NamazWidget()
         DovizWidget()
         HavaWidget()
+        QiblaWidget()
+        if #available(iOSApplicationExtension 18.0, *) { QiblaControl() }
     }
 }
 
