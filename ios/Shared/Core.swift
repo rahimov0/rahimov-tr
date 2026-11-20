@@ -105,6 +105,14 @@ struct Weather: Codable {
     var pop: Int? = nil          // bugünkü en yüksek yağış olasılığı
     struct Hour: Codable { var time: String; var temp: Double; var code: Int; var pop: Int? = nil; var isDay: Bool? = nil }
     struct Day: Codable { var date: Date; var code: Int; var min: Double; var max: Double; var pop: Int }
+    /// k saat sonrası için tahmini hâl: o saatin sıcaklığı/durumu "şu an" olur (widget internetsiz de güncel kalsın)
+    func advanced(hours k: Int) -> Weather {
+        guard k > 0, k <= hours.count else { return self }
+        var w = self; let h = hours[k - 1]
+        w.temp = h.temp; w.code = h.code; w.isDay = h.isDay ?? isDay; w.feels = nil
+        w.hours = Array(hours.dropFirst(k))
+        return w
+    }
     static let placeholder: Weather = {
         let cal = Calendar.current
         let h0 = cal.component(.hour, from: Date())
@@ -141,6 +149,17 @@ enum Prayer: Int, CaseIterable { case imsak, gunes, ogle, ikindi, aksam, yatsi
 // MARK: - Ağ
 
 enum API {
+    /// Widget'lar için: iş belirtilen sürede bitmezse nil (iOS widget'a kısa süre tanır; takılırsa hiç güncellenmez)
+    static func within<T>(_ seconds: Double, _ op: @escaping () async throws -> T) async -> T? {
+        await withTaskGroup(of: T?.self) { g in
+            g.addTask { try? await op() }
+            g.addTask { try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)); return nil }
+            let r = await g.next() ?? nil
+            g.cancelAll()
+            return r
+        }
+    }
+
     static func get(_ url: String) async throws -> Data {
         var req = URLRequest(url: URL(string: url)!)
         req.cachePolicy = .reloadIgnoringLocalCacheData
@@ -181,7 +200,7 @@ enum API {
         let start = times.firstIndex { $0.prefix(13) >= now } ?? 0
         var hours: [Weather.Hour] = []
         var i = start + 1
-        while i < min(start + 7, times.count, temps.count, codes.count) {
+        while i < min(start + 25, times.count, temps.count, codes.count) {
             hours.append(.init(time: String(times[i].suffix(5)), temp: temps[i], code: Int(codes[i]),
                                pop: i < pops.count ? Int(pops[i]) : nil, isDay: i < days.count ? days[i] == 1 : nil)); i += 1
         }

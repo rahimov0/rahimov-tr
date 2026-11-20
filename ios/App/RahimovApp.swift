@@ -6,6 +6,7 @@ import BackgroundTasks
 struct RahimovApp: App {
     @Environment(\.scenePhase) private var phase
     @State private var tab = "panel"
+    @State private var backgroundAt: Date?
 
     var body: some Scene {
         WindowGroup {
@@ -30,7 +31,11 @@ struct RahimovApp: App {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { NotificationCenter.default.post(name: .openQibla, object: nil) }
             }
             if p == .active { AutoLocation.shared.refresh(); Task { await Notif.reschedule(); WidgetCenter.shared.reloadAllTimelines() } }
-            if p == .background { scheduleRefresh() }
+            if p == .active, let b = backgroundAt {
+                NotificationCenter.default.post(name: .appResumed, object: Date().timeIntervalSince(b))
+                backgroundAt = nil
+            }
+            if p == .background { backgroundAt = Date(); scheduleRefresh() }
         }
         .backgroundTask(.appRefresh("tr.rahimov.app.refresh")) {
             await Notif.reschedule()

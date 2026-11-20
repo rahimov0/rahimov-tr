@@ -156,13 +156,13 @@ struct NamazProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<NamazEntry>) -> Void) {
         Task {
             let city = await WidgetCity.resolve()
-            let days = (try? await API.prayerDays(city, days: 3)) ?? []
+            let days = await API.within(10) { try await API.prayerDays(city, days: 3) } ?? []
             let now = Date()
             var points = [now]
             for d in days { points += d.times.filter { $0 > now } }
             points = Array(points.sorted().prefix(14))
             let entries = points.map { NamazEntry(date: $0, s: PrayerState.compute(days: days, at: $0.addingTimeInterval(1), city: city.name)) }
-            let next = days.isEmpty ? now.addingTimeInterval(1800) : (points.last ?? now).addingTimeInterval(60)
+            let next = days.isEmpty ? now.addingTimeInterval(900) : min((points.last ?? now).addingTimeInterval(60), now.addingTimeInterval(6 * 3600))
             completion(Timeline(entries: entries.isEmpty ? [placeholder(in: context)] : entries, policy: .after(next)))
         }
     }
@@ -334,8 +334,8 @@ struct MarketProvider: TimelineProvider {
     func getSnapshot(in context: Context, completion: @escaping (MarketEntry) -> Void) { completion(placeholder(in: context)) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<MarketEntry>) -> Void) {
         Task {
-            let m = (try? await API.market()) ?? API.cachedMarket ?? .placeholder
-            completion(Timeline(entries: [MarketEntry(date: Date(), m: m)], policy: .after(Date().addingTimeInterval(20 * 60))))
+            let m = await API.within(10) { try await API.market() } ?? API.cachedMarket ?? .placeholder
+            completion(Timeline(entries: [MarketEntry(date: Date(), m: m)], policy: .after(Date().addingTimeInterval(15 * 60))))
         }
     }
 }
@@ -395,6 +395,13 @@ struct DovizWidget: Widget {
 
 // MARK: - Hava
 
+/// Önümüzdeki saat başları (widget internetsiz de saat saat ilerlesin)
+func nextHours(_ n: Int, from now: Date = Date()) -> [Date] {
+    let cal = Calendar.current
+    guard let h0 = cal.dateInterval(of: .hour, for: now)?.start else { return [] }
+    return (1...n).compactMap { cal.date(byAdding: .hour, value: $0, to: h0) }
+}
+
 func wxGradient(_ code: Int, day: Bool) -> LinearGradient {
     func c(_ v: UInt) -> Color { Color(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255) }
     let p: (UInt, UInt)
@@ -416,8 +423,11 @@ struct WeatherProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<WeatherEntry>) -> Void) {
         Task {
             let c = await WidgetCity.resolve()
-            let w = (try? await API.weather(c)) ?? API.cachedWeather ?? .placeholder
-            completion(Timeline(entries: [WeatherEntry(date: Date(), w: w, city: c.name)], policy: .after(Date().addingTimeInterval(30 * 60))))
+            let w = await API.within(10) { try await API.weather(c) } ?? API.cachedWeather ?? .placeholder
+            let now = Date()
+            var entries = [WeatherEntry(date: now, w: w, city: c.name)]
+            for (k, d) in nextHours(min(12, w.hours.count)).enumerated() { entries.append(WeatherEntry(date: d, w: w.advanced(hours: k + 1), city: c.name)) }
+            completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60))))
         }
     }
 }
@@ -559,17 +569,22 @@ struct PanelProvider: AppIntentTimelineProvider {
     }
     func timeline(for configuration: PanelConfig, in context: Context) async -> Timeline<PanelEntry> {
         let c = await WidgetCity.resolve()
-        async let m = try? API.market()
-        async let w = try? API.weather(c)
-        async let d = try? API.prayerDays(c, days: 2)
+        async let m = API.within(10) { try await API.market() }
+        async let w = API.within(10) { try await API.weather(c) }
+        async let d = API.within(10) { try await API.prayerDays(c, days: 3) }
         let market = await m ?? API.cachedMarket ?? .placeholder
         let weather = await w ?? API.cachedWeather ?? .placeholder
         let days = await d ?? []
         let now = Date()
-        var points = [now]
-        for dd in days { points += dd.times.filter { $0 > now && $0 < now.addingTimeInterval(30 * 60) } }
-        let entries = points.sorted().map { PanelEntry(date: $0, m: market, w: weather, p: PrayerState.compute(days: days, at: $0.addingTimeInterval(1), city: c.name), city: c, third: configuration.third) }
-        return Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60)))
+        // Namaz vakitleri (24 saat) ve saat başları (12 saat) önceden hazırlanır: iOS yenilemeyi geciktirse de widget doğru kalır
+        let hours = nextHours(min(12, weather.hours.count), from: now)
+        var points = [now] + hours
+        for dd in days { points += dd.times.filter { $0 > now && $0 < now.addingTimeInterval(24 * 3600) } }
+        let entries = Array(Set(points)).sorted().map { t -> PanelEntry in
+            let k = hours.lastIndex { $0 <= t }.map { $0 + 1 } ?? 0
+            return PanelEntry(date: t, m: market, w: weather.advanced(hours: k), p: PrayerState.compute(days: days, at: t.addingTimeInterval(1), city: c.name), city: c, third: configuration.third)
+        }
+        return Timeline(entries: entries, policy: .after(now.addingTimeInterval(20 * 60)))
     }
 }
 
@@ -902,7 +917,7 @@ enum WidgetCity {
         guard Store.autoLocation else { return stored }
         let o = await MainActor.run { OneShotLocation() }
         let ok = await MainActor.run { o.authorizedForWidgets }
-        guard ok, let l = await o.get(timeout: 6) else { return stored }
+        guard ok, let l = await o.get(timeout: 4) else { return stored }
         let here = City(name: stored.name, lat: l.coordinate.latitude, lon: l.coordinate.longitude)
         if stored.distance(to: here) < 800 { return stored }
         let named = await Geo.city(from: l)

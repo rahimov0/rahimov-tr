@@ -8,6 +8,7 @@ extension Notification.Name {
     static let tabReselected = Notification.Name("rahimov.tabReselected") // object: sekme kimliği
     static let pickCity = Notification.Name("rahimov.pickCity")
     static let openQibla = Notification.Name("rahimov.openQibla")
+    static let appResumed = Notification.Name("rahimov.appResumed")   // object: arka planda geçen saniye
 }
 
 /// Sitenin sekmelere karşılık gelen sayfaları
@@ -69,6 +70,7 @@ struct WebTab: UIViewRepresentable {
         }
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.cityChanged(_:)), name: .cityChanged, object: nil)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.reselected(_:)), name: .tabReselected, object: nil)
+        NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.resumed(_:)), name: .appResumed, object: nil)
         return wv
     }
 
@@ -105,6 +107,12 @@ struct WebTab: UIViewRepresentable {
             WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "rahimov.noads", encodedContentRuleList: rules) { list, _ in
                 Task { @MainActor in cachedList = list; done(list) }
             }
+        }
+
+        /// Uygulama ön plana dönünce: gün değiştiyse ya da uzun süre geçtiyse sayfa kendini tazeler
+        @objc func resumed(_ n: Notification) {
+            let secs = (n.object as? Double) ?? 0
+            web?.evaluateJavaScript("window.rahimovResume && rahimovResume(\(Int(secs)))")
         }
 
         @objc func reselected(_ n: Notification) {

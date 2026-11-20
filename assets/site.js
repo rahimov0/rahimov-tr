@@ -50,6 +50,21 @@
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   /* iOS uygulaması (KROV) içinde mi? Uygulamayla mesajlaşma köprüsü */
   var APP = /RahimovApp/.test(navigator.userAgent);
+  /* Sayfa açık kalırsa: gün değişince ya da 30 dk'dan uzun arka planda kaldıysa veriler tazelensin */
+  (function () {
+    var day = new Date().toDateString(), hiddenAt = 0;
+    function check(force) {
+      if (document.hidden) return;
+      if (new Date().toDateString() !== day || force) location.reload();
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      check(hiddenAt && Date.now() - hiddenAt > 30 * 60000);
+    });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) check(false); });
+    setInterval(function () { check(false); }, 60000);
+    window.rahimovResume = function (awaySec) { check(awaySec > 1800); };
+  })();
   function appMsg(m) { try { window.webkit.messageHandlers.rahimov.postMessage(m); } catch (e) {} }
   function timed(url) {
     return new Promise(function (resolve, reject) {
@@ -249,6 +264,7 @@
   /* ---------- Üst şerit (her sayfada) ---------- */
   function ticker() {
     var el = $('#ticker'); if (!el) return;
+    if (!ticker.t) ticker.t = setInterval(ticker, 300000);   /* 5 dk'da bir */
     getJSON(API.fin, 240).then(function (j) {
       var items = [['USD', L('Dolar'), 4], ['EUR', L('Euro'), 4], ['GBP', L('Sterlin'), 4], ['CHF', L('Frank'), 4], ['GRA', L('Gram altın'), 2], ['CEYREKALTIN', L('Çeyrek altın'), 2], ['YARIMALTIN', L('Yarım altın'), 2], ['GUMUS', L('Gümüş'), 2]];
       var one = items.filter(function (i) { return j[i[0]] && typeof j[i[0]].Selling === 'number'; }).map(function (i) {
@@ -265,9 +281,12 @@
 
   /* ---------- Ana sayfa ---------- */
   function home() {
-    var now0 = new Date(), h0 = now0.getHours();
-    setText('#greet', h0 >= 5 && h0 < 11 ? L('Günaydın.') : h0 < 17 && h0 >= 11 ? L('İyi günler.') : h0 >= 17 && h0 < 22 ? L('İyi akşamlar.') : L('İyi geceler.'));
-    setText('#today-date', trDate(now0) + ', ' + DAYS[now0.getDay()]);
+    function greet() {
+      var now0 = new Date(), h0 = now0.getHours();
+      setText('#greet', h0 >= 5 && h0 < 11 ? L('Günaydın.') : h0 < 17 && h0 >= 11 ? L('İyi günler.') : h0 >= 17 && h0 < 22 ? L('İyi akşamlar.') : L('İyi geceler.'));
+      setText('#today-date', trDate(now0) + ', ' + DAYS[now0.getDay()]);
+    }
+    greet(); setInterval(greet, 60000);
 
     function fin() {
       getJSON(API.fin, 110).then(function (j) {
@@ -740,7 +759,9 @@
   /* ---------- Hava durumu ---------- */
   function hava() {
     var box = $('#wx-box');
-    initCity(function (c) {
+    var wxTimer;
+    initCity(function draw(c) {
+      clearInterval(wxTimer); wxTimer = setInterval(function () { draw(getCity()); }, 900000);   /* 15 dk'da bir tazele */
       setText('#wx-city', c.name);
       getJSON(API.wx(c), 900).then(function (j) {
         var cur = j.current, w = wx(cur.weather_code, cur.is_day), D = j.daily;
