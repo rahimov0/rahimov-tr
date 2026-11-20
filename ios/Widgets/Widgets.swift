@@ -397,6 +397,7 @@ struct DovizWidget: Widget {
 
 /// Önümüzdeki saat başları (widget internetsiz de saat saat ilerlesin)
 func nextHours(_ n: Int, from now: Date = Date()) -> [Date] {
+    guard n > 0 else { return [] }
     let cal = Calendar.current
     guard let h0 = cal.dateInterval(of: .hour, for: now)?.start else { return [] }
     return (1...n).compactMap { cal.date(byAdding: .hour, value: $0, to: h0) }
@@ -426,7 +427,7 @@ struct WeatherProvider: TimelineProvider {
             let w = await API.within(10) { try await API.weather(c) } ?? API.cachedWeather ?? .placeholder
             let now = Date()
             var entries = [WeatherEntry(date: now, w: w, city: c.name)]
-            for (k, d) in nextHours(min(12, w.hours.count)).enumerated() { entries.append(WeatherEntry(date: d, w: w.advanced(hours: k + 1), city: c.name)) }
+            for (k, d) in (w.hours.isEmpty ? [] : nextHours(min(12, w.hours.count))).enumerated() { entries.append(WeatherEntry(date: d, w: w.advanced(hours: k + 1), city: c.name)) }
             completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60))))
         }
     }
@@ -545,29 +546,20 @@ struct HavaWidget: Widget {
 
 // MARK: - Panel (hepsi bir arada)
 
-enum PanelThird: String, AppEnum {
-    case doviz, kible
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Üçüncü kutu"
-    static var caseDisplayRepresentations: [PanelThird: DisplayRepresentation] = [.doviz: "Döviz ve altın", .kible: "Kıble"]
-}
-
-struct PanelConfig: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Günlük panel"
-    static var description = IntentDescription("Üçüncü kutuda ne görünsün?")
-    @Parameter(title: "Üçüncü kutu", default: .doviz) var third: PanelThird
-    init() {}
-}
+enum PanelThird { case doviz, kible }
 
 struct PanelEntry: TimelineEntry { let date: Date; let m: Market; let w: Weather; let p: PrayerState; var city: City = Store.city; var third: PanelThird = .doviz }
 
-struct PanelProvider: AppIntentTimelineProvider {
+struct PanelProvider: TimelineProvider {
+    var third: PanelThird = .doviz
     func placeholder(in context: Context) -> PanelEntry {
-        PanelEntry(date: Date(), m: API.cachedMarket ?? .placeholder, w: API.cachedWeather ?? .placeholder, p: NamazProvider().sample())
+        PanelEntry(date: Date(), m: API.cachedMarket ?? .placeholder, w: API.cachedWeather ?? .placeholder, p: NamazProvider().sample(), third: third)
     }
-    func snapshot(for configuration: PanelConfig, in context: Context) async -> PanelEntry {
-        var e = placeholder(in: context); e.third = configuration.third; return e
+    func getSnapshot(in context: Context, completion: @escaping (PanelEntry) -> Void) { completion(placeholder(in: context)) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PanelEntry>) -> Void) {
+        Task { completion(await build()) }
     }
-    func timeline(for configuration: PanelConfig, in context: Context) async -> Timeline<PanelEntry> {
+    private func build() async -> Timeline<PanelEntry> {
         let c = await WidgetCity.resolve()
         async let m = API.within(10) { try await API.market() }
         async let w = API.within(10) { try await API.weather(c) }
@@ -577,12 +569,12 @@ struct PanelProvider: AppIntentTimelineProvider {
         let days = await d ?? []
         let now = Date()
         // Namaz vakitleri (24 saat) ve saat başları (12 saat) önceden hazırlanır: iOS yenilemeyi geciktirse de widget doğru kalır
-        let hours = nextHours(min(12, weather.hours.count), from: now)
+        let hours = weather.hours.isEmpty ? [] : nextHours(min(12, weather.hours.count), from: now)
         var points = [now] + hours
         for dd in days { points += dd.times.filter { $0 > now && $0 < now.addingTimeInterval(24 * 3600) } }
         let entries = Array(Set(points)).sorted().map { t -> PanelEntry in
             let k = hours.lastIndex { $0 <= t }.map { $0 + 1 } ?? 0
-            return PanelEntry(date: t, m: market, w: weather.advanced(hours: k), p: PrayerState.compute(days: days, at: t.addingTimeInterval(1), city: c.name), city: c, third: configuration.third)
+            return PanelEntry(date: t, m: market, w: weather.advanced(hours: k), p: PrayerState.compute(days: days, at: t.addingTimeInterval(1), city: c.name), city: c, third: third)
         }
         return Timeline(entries: entries, policy: .after(now.addingTimeInterval(20 * 60)))
     }
@@ -698,13 +690,26 @@ struct PanelView: View {
 
 struct PanelWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "panel", intent: PanelConfig.self, provider: PanelProvider()) { e in
+        StaticConfiguration(kind: "panel", provider: PanelProvider(third: .doviz)) { e in
             PanelView(e: e).widgetURL(URL(string: "rahimov://panel"))
         }
         .contentMarginsDisabled()
         .configurationDisplayName(T("Günlük panel"))
-        .description(T("Namaz, hava ve döviz ya da kıble bir arada. Üçüncü kutuyu widget'ı düzenleyerek seçebilirsin."))
+        .description(T("Namaz, hava ve döviz bir arada."))
         .supportedFamilies([.systemMedium, .systemLarge, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+/// Namaz · Hava · Kıble üçlüsü (ayrı widget: ayar menüsü gerektirmez)
+struct PanelQiblaWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "panel-kible", provider: PanelProvider(third: .kible)) { e in
+            PanelView(e: e).widgetURL(URL(string: "rahimov://namaz"))
+        }
+        .contentMarginsDisabled()
+        .configurationDisplayName(T("Namaz · Hava · Kıble"))
+        .description(T("Namaz, hava ve kıble bir arada."))
+        .supportedFamilies([.systemMedium])
     }
 }
 
@@ -901,6 +906,7 @@ struct QiblaControl: ControlWidget {
 struct RahimovWidgets: WidgetBundle {
     var body: some Widget {
         PanelWidget()
+        PanelQiblaWidget()
         NamazWidget()
         DovizWidget()
         HavaWidget()

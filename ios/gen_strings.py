@@ -1,5 +1,7 @@
 import json,sys
 S = {
+    "Namaz · Hava · Kıble": ("Prayer · Weather · Qibla", "Намаз · Погода · Кибла", "Namaz · Hava · Qiblə"),
+    "Namaz, hava ve kıble bir arada.": ("Prayer times, weather and qibla together.", "Намаз, погода и кибла вместе.", "Namaz, hava və qiblə bir yerdə."),
     "Pusulayı aç": ("Open compass", "Открыть компас", "Kompası aç"),
     "Namaz, hava ve döviz ya da kıble bir arada. Üçüncü kutuyu widget'ı düzenleyerek seçebilirsin.": ("Prayer, weather and either currency or qibla together. Edit the widget to choose the third box.", "Намаз, погода и курсы или кибла вместе. Третий блок выбирается в настройках виджета.", "Namaz, hava və valyuta ya da qiblə bir yerdə. Üçüncü qutunu vidceti redaktə edərək seçə bilərsən."),
     "Kıble": ("Qibla", "Кибла", "Qiblə"),
